@@ -161,7 +161,9 @@ export async function runInterpretation(llm, { route, system, user, maxOutputTok
       if (truncated) {
         throw new TurnInsightError(
           'MODEL_NO_OUTPUT',
-          `模型把全部 ${maxOutputTokens} token 输出预算用在了推理上，没有产出正文。请调大 maxOutputTokens，或把 reasoningEffort 调低。`,
+          `模型把全部 ${maxOutputTokens} token 输出预算用在了推理上，没有产出正文。`
+          + '该预算是「推理 + 正文」的合计上限，无法把推理排除在外；'
+          + '请调大 maxOutputTokens，或把 reasoningEffort 调低。',
           { usage: assembler.usage, finish: kind, maxOutputTokens },
         )
       }

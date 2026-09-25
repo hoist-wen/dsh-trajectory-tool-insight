@@ -61,17 +61,21 @@ test('turnLimits maps the configuration onto the projection caps', () => {
   })
 })
 
-test('the output budget leaves room for reasoning on top of the answer', () => {
-  // A reasoning model charges its thinking against maxTokens; an allowance that
-  // only covers the visible answer lets it exhaust the budget before replying.
-  assert.ok(CONFIG_DEFAULTS.maxOutputTokens >= 4_000)
+test('the output budget is a single cap over reasoning and answer alike', () => {
+  // DSH's request carries only maxTokens and reasoningEffort, so nothing can
+  // exempt reasoning from the cap. The default therefore keeps the small budget
+  // the operator asked for and pairs it with a low effort, which is the only
+  // lever that leaves room for visible text inside it.
+  assert.equal(CONFIG_DEFAULTS.maxOutputTokens, 1_500)
+  assert.equal(CONFIG_DEFAULTS.reasoningEffort, 'low')
   assert.equal(normalizeConfig({ maxOutputTokens: 32_000 }).maxOutputTokens, 32_000)
   assert.throws(() => normalizeConfig({ maxOutputTokens: 32_001 }), /config\.maxOutputTokens/u)
 })
 
-test('reasoningEffort defaults to inherit and can be overridden', () => {
-  assert.equal(CONFIG_DEFAULTS.reasoningEffort, '')
-  assert.equal(normalizeConfig().reasoningEffort, '')
-  assert.equal(normalizeConfig({ reasoningEffort: ' low ' }).reasoningEffort, 'low')
+test('reasoningEffort defaults to low and can be reset to inherit', () => {
+  assert.equal(normalizeConfig().reasoningEffort, 'low')
+  assert.equal(normalizeConfig({ reasoningEffort: ' high ' }).reasoningEffort, 'high')
+  // '' restores inheritance from the session's own route.
+  assert.equal(normalizeConfig({ reasoningEffort: '' }).reasoningEffort, '')
   assert.throws(() => normalizeConfig({ reasoningEffort: 3 }), /config\.reasoningEffort must be a string/u)
 })

@@ -27,7 +27,7 @@
 
 ```shell
 npm pack
-dsh plugin --profile web add "C:\Users\zhila\wen\code\test\dsh-turn-insight\dsh-plugin-turn-insight-0.1.3.tgz"
+dsh plugin --profile web add "C:\Users\zhila\wen\code\test\dsh-turn-insight\dsh-plugin-turn-insight-0.1.4.tgz"
 ```
 
 重启 `dsh web`（或等 profile 热重载后刷新页面），打开任意非空会话即可看到「解读」标签。
@@ -94,29 +94,34 @@ dsh plugin --profile web remove dsh-plugin-turn-insight
   config:
     defaultProvider: commandcode
     defaultModel: deepseek/deepseek-v4.1-flash
-    reasoningEffort: ''     # 空 = 沿用会话路由的思考强度；可设 low 等适配器支持的值
+    reasoningEffort: low    # low|high|max（本部署模型可选值）；'' = 沿用会话路由
     maxTurns: 50            # 1..500   返回的最新轮次数
     maxToolCallsPerTurn: 40 # 1..200   每轮保留的工具调用数，溢出计入 droppedToolCalls
     maxArgsChars: 1200      # 80..20000
     maxResultChars: 1600    # 80..40000
     maxPromptChars: 400     # 80..4000
     maxAssistantChars: 600  # 80..8000
-    maxOutputTokens: 4000   # 64..32000
+    maxOutputTokens: 1500   # 64..32000
     timeoutMs: 120000       # 1000..900000
 ```
 
 未知键、类型错误、越界值都会在插件加载时**显式抛错**，不会静默退回默认值。
 
-### 输出预算与推理 token
+### `maxOutputTokens` 是什么：它是「推理 + 正文」的合计上限
 
-推理模型的思考 token **计入** `maxOutputTokens`。若预算只够正文，模型可能把额度全花在推理上、一个字的正文都没产出——实测就遇到过 `finish_reason=length, outputTokens=1500, reasoningTokens=1500`。
+`maxOutputTokens` 是**一次生成的总 token 上限**，同时覆盖推理（思考）token 与可见正文——它**不是**“正文长度”。
 
-因此默认给到 `4000`，并且这种情况有专属错误码 `MODEL_NO_OUTPUT`，面板会直接提示「调大 maxOutputTokens 或调低 reasoningEffort」，而不是笼统的“模型没有返回文本”。
+- DSH 的请求里只有两个相关字段：`maxTokens` 与 `reasoningEffort`。**没有任何字段可以把推理排除在 `maxTokens` 之外**，也没有独立的“思考预算”。
+- 本部署的 `command-code` provider 同样只转发这两个（`max_tokens` + `reasoning_effort`），并把推理 token 计入 `outputTokens` 上报。
+- `deepseek/deepseek-v4.1-flash` **无条件思考**，可选强度只有 `low | high | max`，**没有 `off`**。
 
-两个可调杠杆：
+所以「预算固定 1500、但思考不占额度」在当前 provider + 模型上**做不到**。要在这个预算里拿到正文，唯一杠杆是把思考强度压到 `low`——这就是默认取值 `maxOutputTokens: 1500` + `reasoningEffort: low` 的由来。
 
-- `maxOutputTokens`：加大预算（上限 32000）；
-- `reasoningEffort`：显式覆盖思考强度（默认空 = 沿用会话路由）。设为 `low` 通常比加预算更省。
+> ⚠️ 别用 `reasoningEffort: 'off'` 来“关闭思考”：在本 provider 里它的含义是**不发送 `reasoning_effort` 参数**，即回到 Command Code 自己的默认深度，很可能比 `low` 想得更多。
+
+实测失败形态：`finish_reason=length, max_tokens=1500, outputTokens=1500, reasoningTokens=1500`——1500 全被推理吃光、正文零字。provider 会直接抛错；本插件在能拿到 `finish=max-tokens` 的情况下报专属错误码 `MODEL_NO_OUTPUT`，并附带同样的解释，而不是笼统的“模型没有返回文本”。
+
+若 `low` + 1500 仍不够，只有两条路：调大 `maxOutputTokens`，或改用一个可选强度更低的模型。把 `reasoningEffort` 设为 `''` 则回到沿用会话路由的思考强度。
 
 ## 模型影响
 
@@ -147,7 +152,7 @@ dsh plugin --profile web remove dsh-plugin-turn-insight
 - **解读结果不持久化**：刷新页面即丢失，历史不写盘。需要留存请自行导出或改用带存储的插件。
 - **不流式**：两条路由都是 `requestBody: 'buffered'` 的一元请求，面板在模型返回前只显示「正在调用模型解读这一轮…」，没有逐字输出。要打字机效果需改成 `requestBody: 'streaming'` 并自行返回 `ReadableStream`。
 - **冷会话按部署默认模型解读**：没有活动 Agent 的会话读不到自己的模型选择，会落到第 3/4 级来源，面板会如实显示 `部署默认` 或 `插件配置`。
-- **推理强度默认沿用会话**：会话若开了高推理强度，解读调用会继承它，可能把输出预算耗在推理上。此时设 `reasoningEffort: low` 或调大 `maxOutputTokens`。
+- **思考 token 无法排除在预算之外**：`maxOutputTokens` 是「推理 + 正文」的合计上限，DSH 与 provider 都没有独立思考预算字段；默认靠 `reasoningEffort: low` 给它留出正文空间。若仍被推理吃光，只能调大预算或换可选强度更低的模型。想恢复沿用会话的思考强度就把 `reasoningEffort` 设为 `''`。
 - **工具调用证据以日志为准**：日志窗口被截断的极端情况下，结果事件没有对应调用事件时会以 `unknown` 名称保留结果而不是丢弃。
 - **零运行时依赖**：为把改动面压到最小，本包不引用任何 `@deepseek-ai/*` 运行时模块（渲染用平台 seed 表里的 `react`），也不使用 Schemastery 声明 `Config`，因此配置校验是手写的 `src/config.mjs`。
 

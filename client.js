@@ -42,7 +42,7 @@ window.__ModuleLoader__.load({
       MODEL_ABORTED: '模型调用已取消。',
       MODEL_TOOL_CALL: '解读模型尝试调用工具，已中止。',
       MODEL_EMPTY_OUTPUT: '模型没有返回可见文本。',
-      MODEL_NO_OUTPUT: '模型把全部输出预算用在了推理上，没有产出正文。把插件配置的 maxOutputTokens 调大，或把 reasoningEffort 调低（例如 low）。',
+      MODEL_NO_OUTPUT: '模型把全部输出预算用在了推理上，没有产出正文。预算是「推理 + 正文」的合计上限，无法只算正文；请把 maxOutputTokens 调大，或把 reasoningEffort 调低。',
       TURN_NOT_FOUND: '该轮次没有可解读的工具调用，请刷新后重试。',
       'bad-request': '请求参数不合法，插件与宿主版本可能不一致。',
       'http-401': '浏览器会话未鉴权，请刷新页面。',

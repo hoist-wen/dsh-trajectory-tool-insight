@@ -19,12 +19,20 @@ export const CONFIG_DEFAULTS = Object.freeze({
   defaultProvider: '',
   defaultModel: '',
   /**
-   * Override the auxiliary call's reasoning effort. Empty inherits whatever the
-   * session's own route specifies; setting `low` (or any adapter-supported id)
-   * is the lever when a reasoning model spends the whole output budget on
-   * reasoning and emits no answer.
+   * Reasoning effort for the auxiliary call. Empty inherits whatever the
+   * session's own route specifies.
+   *
+   * The default is `low` on purpose: `maxOutputTokens` is a single cap that
+   * covers reasoning **and** visible text, so a deep-thinking auxiliary call
+   * can spend the whole allowance before writing anything. There is no way to
+   * exempt reasoning from the cap — DSH's request carries only `maxTokens` and
+   * `reasoningEffort`, and this deployment's provider forwards exactly those.
+   * `low` is therefore the lever that makes a small budget usable.
+   *
+   * An adapter that does not offer the requested id should ignore it; to go
+   * back to inheriting the session's effort, set this to ''.
    */
-  reasoningEffort: '',
+  reasoningEffort: 'low',
   /** How many of the newest turns `turns/list` returns. */
   maxTurns: 50,
   /** Tool calls kept per turn; overflow is reported as `droppedToolCalls`. */
@@ -36,12 +44,16 @@ export const CONFIG_DEFAULTS = Object.freeze({
   maxPromptChars: 400,
   maxAssistantChars: 600,
   /**
-   * Output cap and wall-clock cap for one interpretation call. The budget must
-   * cover reasoning tokens as well as visible text: a reasoning model can spend
-   * the entire allowance before emitting any answer, which surfaces as a
-   * `MODEL_NO_OUTPUT` failure rather than a partial result.
+   * Output cap and wall-clock cap for one interpretation call.
+   *
+   * Read this as "reasoning + answer", not "answer length": reasoning tokens
+   * count against it. `deepseek/deepseek-v4.1-flash` through the Command Code
+   * provider thinks unconditionally and offers only `low | high | max` — there
+   * is no `off`, and `reasoning_effort` is the only request field that controls
+   * depth. A budget that only covers the answer can therefore be consumed
+   * entirely by thinking and produce no text at all.
    */
-  maxOutputTokens: 4_000,
+  maxOutputTokens: 1_500,
   timeoutMs: 120_000,
 })
 
