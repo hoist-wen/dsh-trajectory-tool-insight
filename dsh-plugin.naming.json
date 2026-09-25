@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "policy": "dsh-plugin-naming/v1",
+  "plugin": {
+    "namespace": "quill507",
+    "name": "turn-insight",
+    "coordinate": "quill507/turn-insight",
+    "packageName": "dsh-plugin-turn-insight"
+  },
+  "names": {
+    "pluginNames": ["turn-insight"],
+    "loaderIds": ["turn-insight"],
+    "services": [],
+    "tools": [],
+    "commands": [],
+    "skills": [],
+    "skillProviders": [],
+    "events": [],
+    "settingsNamespaces": [],
+    "routes": [
+      { "kind": "exact", "path": "/api/turn-insight.turns" },
+      { "kind": "exact", "path": "/api/turn-insight.analyze" }
+    ]
+  }
+}

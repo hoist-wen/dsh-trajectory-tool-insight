@@ -1,0 +1,14 @@
+# 依赖与本地环境
+node_modules/
+.npm-cache/
+
+# 打包产物（dsh plugin add 会把它记成 file: 依赖，属于本机派生物，不入库）
+*.tgz
+
+# 构建 / 测试副产物
+coverage/
+*.log
+
+# 编辑器与系统文件
+.DS_Store
+Thumbs.db

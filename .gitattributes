@@ -1,0 +1,4 @@
+# 所有文本文件一律以 LF 入库与检出，避免 Windows 上 CRLF 造成的历史噪声
+* text=auto eol=lf
+*.png binary
+*.tgz binary

@@ -1,0 +1,6 @@
+# Bundle patch for this package, applied by the profile launcher after the
+# bundle layers below it. The inserted row is what makes the package a Loader
+# entry; client-modules discovers the `./client` bundle from that same entry.
+- insert:
+    - id: turn-insight
+      name: dsh-plugin-turn-insight
