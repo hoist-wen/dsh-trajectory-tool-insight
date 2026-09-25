@@ -1,7 +1,7 @@
 # 轨迹解读 Turn Insight
 
 给 DSH Web 的会话视图环加一个 **「解读」** 标签页，落在内置的「对话」「轨迹」旁边。
-页面按轮次列出每一轮轨迹里的**工具调用**，每轮一个「分析」按钮，点击后由模型给出一段解读。
+页面按轮次列出**哪些轮次有工具调用**（只给次数与失败次数），每轮一个「分析」按钮，点击后由模型给出一段解读。
 
 **默认使用该会话正在使用的模型**（就是对话框模型选择器里当前那个），不需要额外配置模型。
 
@@ -11,15 +11,15 @@
 │ 轨迹解读                    当前会话 · deepseek-v4.1-flash  [刷新] │
 │ 共 12 轮轨迹 · 可解读 9 轮                                    │
 │                                                            │
-│ 第 3 轮        2 次工具调用                        [分析]     │
+│ 第 3 轮        2 次工具调用 · 1 次失败             [分析]     │
 │ 去修一下这个 bug                                             │
-│   read   {"file_path":"src/a.ts"}                          │
-│   pwsh ✗ {"command":"npm test"}                            │
 │ ┌ 解读 ────────────────────────────────────────────────┐   │
 │ │ **这一轮在做什么**：定位并复现缺陷。                        │   │
 │ └──────────────────────────────────────────────────────┘   │
 └────────────────────────────────────────────────────────────┘
 ```
+
+面板刻意**不罗列**每次工具调用的名称、参数与输出——只给计数，解读本身才是重点。
 
 ## 安装
 
@@ -27,7 +27,7 @@
 
 ```shell
 npm pack
-dsh plugin --profile web add "C:\Users\zhila\wen\code\test\dsh-turn-insight\dsh-plugin-turn-insight-0.1.2.tgz"
+dsh plugin --profile web add "C:\Users\zhila\wen\code\test\dsh-turn-insight\dsh-plugin-turn-insight-0.1.3.tgz"
 ```
 
 重启 `dsh web`（或等 profile 热重载后刷新页面），打开任意非空会话即可看到「解读」标签。
@@ -94,30 +94,45 @@ dsh plugin --profile web remove dsh-plugin-turn-insight
   config:
     defaultProvider: commandcode
     defaultModel: deepseek/deepseek-v4.1-flash
+    reasoningEffort: ''     # 空 = 沿用会话路由的思考强度；可设 low 等适配器支持的值
     maxTurns: 50            # 1..500   返回的最新轮次数
     maxToolCallsPerTurn: 40 # 1..200   每轮保留的工具调用数，溢出计入 droppedToolCalls
     maxArgsChars: 1200      # 80..20000
     maxResultChars: 1600    # 80..40000
     maxPromptChars: 400     # 80..4000
     maxAssistantChars: 600  # 80..8000
-    maxOutputTokens: 1500   # 64..16000
+    maxOutputTokens: 4000   # 64..32000
     timeoutMs: 120000       # 1000..900000
 ```
 
 未知键、类型错误、越界值都会在插件加载时**显式抛错**，不会静默退回默认值。
 
+### 输出预算与推理 token
+
+推理模型的思考 token **计入** `maxOutputTokens`。若预算只够正文，模型可能把额度全花在推理上、一个字的正文都没产出——实测就遇到过 `finish_reason=length, outputTokens=1500, reasoningTokens=1500`。
+
+因此默认给到 `4000`，并且这种情况有专属错误码 `MODEL_NO_OUTPUT`，面板会直接提示「调大 maxOutputTokens 或调低 reasoningEffort」，而不是笼统的“模型没有返回文本”。
+
+两个可调杠杆：
+
+- `maxOutputTokens`：加大预算（上限 32000）；
+- `reasoningEffort`：显式覆盖思考强度（默认空 = 沿用会话路由）。设为 `low` 通常比加预算更省。
+
 ## 模型影响
 
 ### 请求面与触发条件
 
-一次 `turn/analyze` 触发**一次独立的模型请求**：`system` 为固定的解读器提示词，`user` 为一则 `TURN_EVIDENCE_JSON_LENGTH=<n>` 长度标记 + 该轮工具调用证据的 JSON。证据里的参数与工具输出是不可信的历史数据，系统提示词固定了「只当数据」的边界。
+一次 `turn/analyze` 触发**一次独立的模型请求**：`system` 为固定的解读器提示词（刻意写短——过长的指令会诱发更多推理 token，而推理与正文共享同一份输出预算），`user` 为一则 `TURN_EVIDENCE_JSON_LENGTH=<n>` 长度标记 + 该轮工具调用证据的 JSON。证据里的参数与工具输出是不可信的历史数据，系统提示词固定了「只当数据」的边界。
 
 - 请求携带 `source: { kind: 'plugin', plugin: 'dsh-plugin-turn-insight' }` 作为归因；
 - **不传 `sessionId`、不追加任何会话事件**，所以解读请求不进入会话日志，也不会进入对话历史或 KV 缓存前缀。
 
 ### Token 影响
 
-按需发生：只有点击「分析」才产生请求。输入被 `maxArgsChars` / `maxResultChars` 截断，输出被 `maxOutputTokens` 限制；`max-tokens` 结束时仍返回部分文本，并在面板标注「输出被 maxTokens 截断」。
+按需发生：只有点击「分析」才产生请求。输入被 `maxArgsChars` / `maxResultChars` 截断，输出被 `maxOutputTokens` 限制（推理 token 也计入）。
+
+- `max-tokens` 结束但**有**正文：仍返回部分文本，面板标注「输出被 maxTokens 截断」；
+- `max-tokens` 结束且**没有**正文（推理吃光预算）：报 `MODEL_NO_OUTPUT`，面板给出「调大 maxOutputTokens 或调低 reasoningEffort」的可操作提示。
 
 ### KV 缓存影响
 
@@ -132,6 +147,7 @@ dsh plugin --profile web remove dsh-plugin-turn-insight
 - **解读结果不持久化**：刷新页面即丢失，历史不写盘。需要留存请自行导出或改用带存储的插件。
 - **不流式**：两条路由都是 `requestBody: 'buffered'` 的一元请求，面板在模型返回前只显示「正在调用模型解读这一轮…」，没有逐字输出。要打字机效果需改成 `requestBody: 'streaming'` 并自行返回 `ReadableStream`。
 - **冷会话按部署默认模型解读**：没有活动 Agent 的会话读不到自己的模型选择，会落到第 3/4 级来源，面板会如实显示 `部署默认` 或 `插件配置`。
+- **推理强度默认沿用会话**：会话若开了高推理强度，解读调用会继承它，可能把输出预算耗在推理上。此时设 `reasoningEffort: low` 或调大 `maxOutputTokens`。
 - **工具调用证据以日志为准**：日志窗口被截断的极端情况下，结果事件没有对应调用事件时会以 `unknown` 名称保留结果而不是丢弃。
 - **零运行时依赖**：为把改动面压到最小，本包不引用任何 `@deepseek-ai/*` 运行时模块（渲染用平台 seed 表里的 `react`），也不使用 Schemastery 声明 `Config`，因此配置校验是手写的 `src/config.mjs`。
 

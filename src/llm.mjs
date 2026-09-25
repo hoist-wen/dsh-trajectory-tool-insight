@@ -153,13 +153,24 @@ export async function runInterpretation(llm, { route, system, user, maxOutputTok
         finish: kind,
       })
     }
+    const truncated = kind === 'max-tokens'
     if (!text) {
+      // A reasoning model can spend the whole output budget on reasoning and
+      // never emit an answer. That is a configuration problem, not an empty
+      // response, so it gets its own code and an actionable message.
+      if (truncated) {
+        throw new TurnInsightError(
+          'MODEL_NO_OUTPUT',
+          `模型把全部 ${maxOutputTokens} token 输出预算用在了推理上，没有产出正文。请调大 maxOutputTokens，或把 reasoningEffort 调低。`,
+          { usage: assembler.usage, finish: kind, maxOutputTokens },
+        )
+      }
       throw new TurnInsightError('MODEL_EMPTY_OUTPUT', 'The interpretation model returned no visible text.', {
         usage: assembler.usage,
         finish: kind,
       })
     }
-    return { text, usage: assembler.usage, finish: kind, truncated: kind === 'max-tokens' }
+    return { text, usage: assembler.usage, finish: kind, truncated }
   } finally {
     deadline.dispose()
   }

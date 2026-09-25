@@ -44,11 +44,23 @@ test('dropped tool calls are surfaced to the model', () => {
   assert.equal(parsed.truncatedToolCalls, 7)
 })
 
-test('the system prompt fixes the untrusted boundary and demands the four sections', () => {
+test('the system prompt fixes the untrusted boundary and asks for the three sections', () => {
   assert.match(SYSTEM_PROMPT, /TURN_EVIDENCE_JSON_LENGTH=/u)
   assert.match(SYSTEM_PROMPT, /不可信/u)
   assert.match(SYSTEM_PROMPT, /不调用工具/u)
-  for (const section of ['这一轮在做什么', '工具调用逐条解读', '判断', '下一步']) {
+  for (const section of ['这一轮在做什么', '判断', '下一步']) {
     assert.ok(SYSTEM_PROMPT.includes(section), `system prompt names the "${section}" section`)
   }
+})
+
+test('the system prompt forbids enumerating individual tool calls', () => {
+  // The panel shows counts only, and a per-call walk-through was both unwanted
+  // and the main driver of the reasoning tokens that exhausted the budget.
+  assert.ok(SYSTEM_PROMPT.includes('不要逐条罗列工具名称与参数'))
+  assert.ok(!SYSTEM_PROMPT.includes('工具调用逐条解读'))
+})
+
+test('the system prompt stays short enough not to invite a reasoning blowout', () => {
+  assert.ok(SYSTEM_PROMPT.length < 700, `system prompt is ${SYSTEM_PROMPT.length} characters`)
+  assert.ok(SYSTEM_PROMPT.includes('200 字以内'))
 })

@@ -42,6 +42,7 @@ window.__ModuleLoader__.load({
       MODEL_ABORTED: '模型调用已取消。',
       MODEL_TOOL_CALL: '解读模型尝试调用工具，已中止。',
       MODEL_EMPTY_OUTPUT: '模型没有返回可见文本。',
+      MODEL_NO_OUTPUT: '模型把全部输出预算用在了推理上，没有产出正文。把插件配置的 maxOutputTokens 调大，或把 reasoningEffort 调低（例如 low）。',
       TURN_NOT_FOUND: '该轮次没有可解读的工具调用，请刷新后重试。',
       'bad-request': '请求参数不合法，插件与宿主版本可能不一致。',
       'http-401': '浏览器会话未鉴权，请刷新页面。',
@@ -114,19 +115,6 @@ window.__ModuleLoader__.load({
   font-size: 12px;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
-}
-.tins-calls { margin: 8px 0 0; padding: 0; list-style: none; display: grid; gap: 4px; }
-.tins-call { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
-.tins-call-name { font-weight: 600; font-size: 12px; flex: 0 0 auto; }
-.tins-call-failed { color: var(--tins-alert); }
-.tins-call-args {
-  flex: 1 1 auto;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  color: var(--tins-muted);
-  font-size: 11px;
 }
 .tins-analysis { margin-top: 10px; padding: 10px 12px; border: 1px solid var(--tins-line); border-radius: 8px; background: var(--tins-surface); }
 .tins-analysis-head { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; font-size: 11px; font-weight: 600; }
@@ -201,11 +189,6 @@ window.__ModuleLoader__.load({
       }
     }
 
-    function argsPreview(args) {
-      const line = String(args).replace(/\s+/gu, ' ').trim()
-      return line.length > 140 ? `${line.slice(0, 139)}…` : line
-    }
-
     function inline(text, keyPrefix) {
       return String(text)
         .split(/(\*\*[^*]+\*\*|`[^`]+`)/gu)
@@ -243,12 +226,18 @@ window.__ModuleLoader__.load({
 
     function turnCard(entry, analysis, onAnalyze) {
       const running = analysis?.status === 'running'
+      const failed = entry.toolCalls.filter(call => call.isError).length
+      // Counts only: the panel deliberately does not enumerate tool names,
+      // arguments, or results — the interpretation is the whole point.
+      const summary = [
+        `${entry.toolCalls.length} 次工具调用`,
+        failed > 0 ? `${failed} 次失败` : '',
+        entry.droppedToolCalls > 0 ? `另有 ${entry.droppedToolCalls} 次未纳入` : '',
+      ].filter(Boolean).join(' · ')
       return h('section', { className: 'tins-turn', key: entry.turn },
         h('div', { className: 'tins-turn-head' },
           h('span', { className: 'tins-turn-no' }, `第 ${entry.turn} 轮`),
-          h('span', { className: 'tins-turn-count' }, entry.droppedToolCalls > 0
-            ? `${entry.toolCalls.length} 次工具调用（另有 ${entry.droppedToolCalls} 次未展示）`
-            : `${entry.toolCalls.length} 次工具调用`),
+          h('span', { className: 'tins-turn-count' }, summary),
           h('button', {
             className: 'tins-btn tins-btn-primary',
             type: 'button',
@@ -257,14 +246,6 @@ window.__ModuleLoader__.load({
           }, running ? '分析中…' : analysis ? '重新分析' : '分析'),
         ),
         entry.prompt ? h('p', { className: 'tins-prompt' }, entry.prompt) : null,
-        h('ol', { className: 'tins-calls' }, entry.toolCalls.map((call, index) => h('li', {
-          className: 'tins-call',
-          key: call.callId || `${entry.turn}-${index}`,
-        },
-        h('span', { className: `tins-call-name${call.isError ? ' tins-call-failed' : ''}` },
-          call.isError ? `${call.name} ✗` : call.name),
-        call.args ? h('code', { className: 'tins-call-args', title: call.args }, argsPreview(call.args)) : null,
-        ))),
         analysis ? analysisPanel(analysis) : null,
       )
     }

@@ -140,6 +140,25 @@ test('a max-tokens stop returns the partial text flagged as truncated', async ()
   })
 })
 
+test('a budget spent entirely on reasoning reports its own actionable failure', async () => {
+  // The observed real-world case: finish_reason=length, outputTokens=1500,
+  // reasoningTokens=1500 — the whole allowance went to reasoning and no visible
+  // text was produced.
+  const llm = llmYielding([
+    { type: 'reasoning-delta', index: 0, text: '想了很多' },
+    { type: 'block-end', index: 0, block: { type: 'reasoning', text: '想了很多' } },
+    { type: 'usage', usage: { outputTokens: 1_500, reasoningTokens: 1_500 } },
+    { type: 'finish', reason: { kind: 'max-tokens' } },
+  ])
+  await assert.rejects(runInterpretation(llm, { ...CALL, maxOutputTokens: 1_500 }), error => {
+    assert.equal(error.code, 'MODEL_NO_OUTPUT')
+    assert.match(error.message, /推理/u)
+    assert.match(error.message, /1500/u)
+    assert.equal(error.details.maxOutputTokens, 1_500)
+    return true
+  })
+})
+
 test('a tool call from the interpretation model is refused', async () => {
   const llm = llmYielding([
     { type: 'block-end', index: 0, block: { type: 'tool-call', id: 'x', name: 'read', arguments: '{}' } },

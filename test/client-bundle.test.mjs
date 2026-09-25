@@ -237,11 +237,35 @@ test('the view renders per-turn tool calls and the returned interpretation', () 
   assert.match(text, /共 4 轮轨迹 · 可解读 1 轮/u)
   assert.match(text, /当前会话 · deepseek\/deepseek-v4\.1-flash/u)
   assert.match(text, /第 3 轮/u)
+  assert.match(text, /2 次工具调用 · 1 次失败/u)
   assert.match(text, /去修一下这个 bug/u)
-  assert.match(text, /read/u)
-  assert.match(text, /grep ✗/u)
   assert.match(text, /重新分析/u)
   assert.match(text, /这一轮在做什么/u)
+})
+
+test('the panel summarizes a turn with counts instead of listing tool details', () => {
+  const listing = {
+    status: 'ready',
+    totalTurns: 1,
+    route: null,
+    error: null,
+    turns: [{
+      turn: 5,
+      prompt: '跑测试',
+      droppedToolCalls: 3,
+      toolCalls: [
+        { callId: 'c1', name: 'read', args: '{"file_path":"secret-path.ts"}', result: 'secret-output', isError: false },
+        { callId: 'c2', name: 'grep', args: '{"pattern":"SECRET_PATTERN"}', result: 'boom', isError: true },
+      ],
+    }],
+  }
+  const text = renderView(mount({ stateSeeds: [listing] }).state, 's')
+
+  assert.match(text, /2 次工具调用 · 1 次失败 · 另有 3 次未纳入/u)
+  // Neither the tool names nor their arguments/results may leak into the panel.
+  for (const leak of ['read', 'grep', 'secret-path.ts', 'SECRET_PATTERN', 'secret-output', 'file_path']) {
+    assert.ok(!text.includes(leak), `panel must not render "${leak}"`)
+  }
 })
 
 test('a truncated interpretation is flagged in the panel', () => {

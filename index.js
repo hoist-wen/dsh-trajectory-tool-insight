@@ -191,15 +191,21 @@ export function apply(ctx, rawConfig = {}) {
       if (target === undefined) {
         throw new TurnInsightError('TURN_NOT_FOUND', `Turn ${turn} has no recorded tool calls in this session.`)
       }
+      // The configured effort, when set, wins over the inherited session route:
+      // it is the documented lever for a model that burns the whole output
+      // budget on reasoning.
+      const effectiveRoute = settings.reasoningEffort
+        ? { ...route, reasoningEffort: settings.reasoningEffort }
+        : route
       const result = await runInterpretation(ctx.llm, {
-        route,
+        route: effectiveRoute,
         system: SYSTEM_PROMPT,
         user: buildAnalysisPrompt(target),
         maxOutputTokens: settings.maxOutputTokens,
         timeoutMs: settings.timeoutMs,
         signal: request.signal,
       })
-      return { sessionId, turn, route, ...result }
+      return { sessionId, turn, route: effectiveRoute, ...result }
     }),
   })
 }

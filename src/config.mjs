@@ -18,6 +18,13 @@ export const CONFIG_DEFAULTS = Object.freeze({
   /** Fallback route for a session whose own model selection cannot be read. */
   defaultProvider: '',
   defaultModel: '',
+  /**
+   * Override the auxiliary call's reasoning effort. Empty inherits whatever the
+   * session's own route specifies; setting `low` (or any adapter-supported id)
+   * is the lever when a reasoning model spends the whole output budget on
+   * reasoning and emits no answer.
+   */
+  reasoningEffort: '',
   /** How many of the newest turns `turns/list` returns. */
   maxTurns: 50,
   /** Tool calls kept per turn; overflow is reported as `droppedToolCalls`. */
@@ -28,8 +35,13 @@ export const CONFIG_DEFAULTS = Object.freeze({
   /** Character caps applied to a turn's own prompt and assistant notes. */
   maxPromptChars: 400,
   maxAssistantChars: 600,
-  /** Output cap and wall-clock cap for one interpretation call. */
-  maxOutputTokens: 1_500,
+  /**
+   * Output cap and wall-clock cap for one interpretation call. The budget must
+   * cover reasoning tokens as well as visible text: a reasoning model can spend
+   * the entire allowance before emitting any answer, which surfaces as a
+   * `MODEL_NO_OUTPUT` failure rather than a partial result.
+   */
+  maxOutputTokens: 4_000,
   timeoutMs: 120_000,
 })
 
@@ -40,11 +52,11 @@ const NUMBER_BOUNDS = Object.freeze({
   maxResultChars: [80, 40_000],
   maxPromptChars: [80, 4_000],
   maxAssistantChars: [80, 8_000],
-  maxOutputTokens: [64, 16_000],
+  maxOutputTokens: [64, 32_000],
   timeoutMs: [1_000, 900_000],
 })
 
-const STRING_KEYS = Object.freeze(['defaultProvider', 'defaultModel'])
+const STRING_KEYS = Object.freeze(['defaultProvider', 'defaultModel', 'reasoningEffort'])
 
 function readString(key, value) {
   if (value === undefined || value === null) return undefined

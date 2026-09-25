@@ -60,3 +60,18 @@ test('turnLimits maps the configuration onto the projection caps', () => {
     assistantChars: 200,
   })
 })
+
+test('the output budget leaves room for reasoning on top of the answer', () => {
+  // A reasoning model charges its thinking against maxTokens; an allowance that
+  // only covers the visible answer lets it exhaust the budget before replying.
+  assert.ok(CONFIG_DEFAULTS.maxOutputTokens >= 4_000)
+  assert.equal(normalizeConfig({ maxOutputTokens: 32_000 }).maxOutputTokens, 32_000)
+  assert.throws(() => normalizeConfig({ maxOutputTokens: 32_001 }), /config\.maxOutputTokens/u)
+})
+
+test('reasoningEffort defaults to inherit and can be overridden', () => {
+  assert.equal(CONFIG_DEFAULTS.reasoningEffort, '')
+  assert.equal(normalizeConfig().reasoningEffort, '')
+  assert.equal(normalizeConfig({ reasoningEffort: ' low ' }).reasoningEffort, 'low')
+  assert.throws(() => normalizeConfig({ reasoningEffort: 3 }), /config\.reasoningEffort must be a string/u)
+})
