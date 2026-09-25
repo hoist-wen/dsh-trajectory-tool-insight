@@ -29,6 +29,14 @@ window.__ModuleLoader__.load({
     const TURNS_PATH = '/api/turn-insight.turns'
     const ANALYZE_PATH = '/api/turn-insight.analyze'
 
+    /**
+     * Transient per-session append notes. Module-level on purpose: the view is
+     * unmounted whenever the user switches tabs, and a steering note typed one
+     * moment ago should still be there on the way back — but it must not
+     * outlive the page, because it is not saved state.
+     */
+    const appendNotes = new Map()
+
     const ROUTE_SOURCE_LABELS = {
       session: '当前会话',
       default: '部署默认',
@@ -101,6 +109,24 @@ window.__ModuleLoader__.load({
 .tins-btn:hover:not(:disabled) { background: var(--tins-surface); }
 .tins-btn:disabled { opacity: 0.55; cursor: default; }
 .tins-btn-primary { border-color: currentColor; font-weight: 600; }
+.tins-append { padding: 10px 0 2px; }
+.tins-append-label { display: block; font-size: 11px; font-weight: 600; margin-bottom: 4px; }
+.tins-append-input {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  resize: vertical;
+  font: inherit;
+  font-size: 12px;
+  line-height: 1.55;
+  padding: 6px 8px;
+  border: 1px solid var(--tins-line);
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+}
+.tins-append-input:focus { outline: none; border-color: currentColor; }
+.tins-append-note { margin: 4px 0 0; color: var(--tins-muted); font-size: 11px; }
 .tins-body { padding-top: 8px; }
 .tins-empty { color: var(--tins-muted); padding: 24px 0; }
 .tins-turn { padding: 12px 0; border-bottom: 1px solid var(--tins-line); }
@@ -185,7 +211,13 @@ window.__ModuleLoader__.load({
       }
       return {
         listTurns: signal => call(TURNS_PATH, { sessionId }, signal),
-        analyzeTurn: (turn, signal) => call(ANALYZE_PATH, { sessionId, turn }, signal),
+        // An empty append is omitted entirely, so an untouched box produces
+        // exactly the request the plugin made before the box existed.
+        analyzeTurn: (turn, append, signal) => call(
+          ANALYZE_PATH,
+          { sessionId, turn, ...(append ? { append } : {}) },
+          signal,
+        ),
       }
     }
 
@@ -284,6 +316,18 @@ window.__ModuleLoader__.load({
       const [listing, setListing] = useState({ status: 'loading', turns: [], totalTurns: 0, route: null, error: null })
       const [analyses, setAnalyses] = useState(() => new Map())
       const [reloadToken, setReloadToken] = useState(0)
+      // Seeded from the module-level store so the note survives this view being
+      // unmounted and remounted, while still dying with the page: it is a
+      // transient steering note, not saved state.
+      const [append, setAppend] = useState(() => appendNotes.get(sessionId) ?? '')
+      const appendRef = useRef(append)
+      appendRef.current = append
+
+      const updateAppend = useCallback(value => {
+        setAppend(value)
+        if (value.trim() === '') appendNotes.delete(sessionId)
+        else appendNotes.set(sessionId, value)
+      }, [sessionId])
 
       useEffect(() => {
         if (sessionId === '' || typeof apiRef.current?.listTurns !== 'function') return undefined
@@ -311,7 +355,7 @@ window.__ModuleLoader__.load({
 
       const analyze = useCallback(turn => {
         setAnalyses(previous => new Map(previous).set(turn, { status: 'running' }))
-        apiRef.current.analyzeTurn(turn).then(value => {
+        apiRef.current.analyzeTurn(turn, appendRef.current.trim()).then(value => {
           setAnalyses(previous => new Map(previous).set(turn, {
             status: 'ready',
             text: typeof value?.text === 'string' ? value.text : '',
@@ -329,6 +373,7 @@ window.__ModuleLoader__.load({
 
       const route = listing.route
       const busy = listing.status === 'loading' || listing.status === 'refreshing'
+      const appendLength = append.trim().length
       return h('div', { className: 'tins-root' },
         h('header', { className: 'tins-head' },
           h('div', { className: 'tins-head-text' },
@@ -347,6 +392,20 @@ window.__ModuleLoader__.load({
               onClick: () => setReloadToken(token => token + 1),
             }, busy ? '刷新中…' : '刷新'),
           ),
+        ),
+        h('div', { className: 'tins-append' },
+          h('label', { className: 'tins-append-label', htmlFor: 'tins-append-input' }, '附加提示词（可选）'),
+          h('textarea', {
+            id: 'tins-append-input',
+            className: 'tins-append-input',
+            rows: 2,
+            value: append,
+            placeholder: '追加到解读提示词后面，例如：只关注风险，不要复述过程。留空则用默认提示词。',
+            onChange: event => updateAppend(event.target.value),
+          }),
+          h('p', { className: 'tins-append-note' }, appendLength === 0
+            ? '留空 = 默认提示词；只影响后续的「分析」，不写入会话日志。'
+            : `将附加 ${appendLength} 个字符到解读提示词（对所有轮次的「分析」生效，不写入会话日志）。`),
         ),
         h('div', { className: 'tins-body' },
           listing.status === 'error'

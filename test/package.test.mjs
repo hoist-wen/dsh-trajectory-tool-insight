@@ -186,3 +186,111 @@ test('a failing session read becomes an internal failure, not an unhandled rejec
   assert.equal(answer.error.code, 'internal')
   assert.match(answer.error.message, /session is gone/u)
 })
+
+/** One turn carrying one tool call, plus a readable model selection. */
+function observationWithOneTurn() {
+  return {
+    events: [
+      { type: 'turn/start', seq: 0, time: 1, data: { turn: 1 } },
+      { type: 'user/message', seq: 1, time: 2, data: { content: [{ type: 'text', text: '看一下这个文件' }] } },
+      { type: 'tool/call', seq: 2, time: 3, data: { turn: 1, step: 0, callId: 'c1', name: 'read', arguments: '{"file_path":"a.ts"}' } },
+      { type: 'tool/result', seq: 3, time: 4, data: { message: { toolCallId: 'c1', source: { callId: 'c1' }, content: [{ type: 'text', text: 'ok' }] } } },
+      { type: 'turn/end', seq: 4, time: 5, data: { turn: 1, reason: { kind: 'stop' } } },
+    ],
+    projections: { values: { modelSelection: { lastUsed: null, next: { provider: 'p', model: 'm' } } } },
+    [Symbol.dispose]() {},
+  }
+}
+
+/** An llm stub that records the request and answers with one line of text. */
+function recordingLlm() {
+  const calls = []
+  return {
+    calls,
+    async *stream(options) {
+      calls.push(options)
+      yield { type: 'text-delta', index: 0, text: '解读结果' }
+      yield { type: 'finish', reason: { kind: 'stop' } }
+    },
+  }
+}
+
+test('an absent append sends the default system prompt unchanged', async () => {
+  const host = await import(new URL('index.js', root))
+  const { SYSTEM_PROMPT } = await import(new URL('src/prompt.mjs', root))
+  const llm = recordingLlm()
+  const answer = await callRoute(host, '/api/turn-insight.analyze', { sessionId: 's', turn: 1 }, {
+    sessionQuery: { observeSession: async () => observationWithOneTurn() },
+    llm,
+  })
+
+  assert.equal(answer.ok, true)
+  assert.equal(answer.value.appendApplied, false)
+  assert.equal(answer.value.text, '解读结果')
+  assert.equal(llm.calls.length, 1)
+  assert.equal(llm.calls[0].system, SYSTEM_PROMPT)
+})
+
+test('an append is trimmed onto the system prompt and reported as applied', async () => {
+  const host = await import(new URL('index.js', root))
+  const { SYSTEM_PROMPT } = await import(new URL('src/prompt.mjs', root))
+  const llm = recordingLlm()
+  const answer = await callRoute(host, '/api/turn-insight.analyze', {
+    sessionId: 's',
+    turn: 1,
+    append: '  只看风险，不要复述过程。  ',
+  }, {
+    sessionQuery: { observeSession: async () => observationWithOneTurn() },
+    llm,
+  })
+
+  assert.equal(answer.ok, true)
+  assert.equal(answer.value.appendApplied, true)
+  const { system } = llm.calls[0]
+  assert.ok(system.startsWith(SYSTEM_PROMPT))
+  assert.ok(system.includes('只看风险，不要复述过程。'))
+  // The evidence envelope is untouched by the append.
+  assert.ok(llm.calls[0].messages[0].content[0].text.startsWith('TURN_EVIDENCE_JSON_LENGTH='))
+})
+
+test('the append is validated at the boundary', async () => {
+  const host = await import(new URL('index.js', root))
+  const extra = { sessionQuery: { observeSession: async () => observationWithOneTurn() }, llm: recordingLlm() }
+
+  const wrongType = await callRoute(host, '/api/turn-insight.analyze', { sessionId: 's', turn: 1, append: 42 }, extra)
+  assert.equal(wrongType.ok, false)
+  assert.equal(wrongType.error.code, 'bad-request')
+  assert.match(wrongType.error.message, /append/u)
+
+  const tooLong = await callRoute(host, '/api/turn-insight.analyze', {
+    sessionId: 's',
+    turn: 1,
+    append: 'x'.repeat(2_001),
+  }, extra)
+  assert.equal(tooLong.ok, false)
+  assert.equal(tooLong.error.code, 'bad-request')
+  assert.equal(tooLong.error.details.maxAppendChars, 2_000)
+  assert.equal(tooLong.error.details.received, 2_001)
+
+  // A whitespace-only append is "empty", so it must not be rejected as long.
+  const blank = await callRoute(host, '/api/turn-insight.analyze', { sessionId: 's', turn: 1, append: '   ' }, extra)
+  assert.equal(blank.ok, true)
+  assert.equal(blank.value.appendApplied, false)
+})
+
+test('maxAppendChars is enforced from configuration, not hard-coded', async () => {
+  const host = await import(new URL('index.js', root))
+  const routes = []
+  const llm = recordingLlm()
+  host.apply({
+    get: () => undefined,
+    sessionQuery: { observeSession: async () => observationWithOneTurn() },
+    llm,
+    connection: { fetch: { register: route => { routes.push(route); return () => {} } } },
+  }, { maxAppendChars: 5 })
+
+  const route = routes.find(candidate => candidate.path === '/api/turn-insight.analyze')
+  const answer = await (await route.fetch(request({ sessionId: 's', turn: 1, append: '123456' }))).json()
+  assert.equal(answer.ok, false)
+  assert.equal(answer.error.details.maxAppendChars, 5)
+})

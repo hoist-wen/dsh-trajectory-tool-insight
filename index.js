@@ -29,7 +29,7 @@
 import { configuredFallbackRoute, normalizeConfig, turnLimits } from './src/config.mjs'
 import { TurnInsightError } from './src/errors.mjs'
 import { runInterpretation } from './src/llm.mjs'
-import { SYSTEM_PROMPT, buildAnalysisPrompt } from './src/prompt.mjs'
+import { buildAnalysisPrompt, buildSystemPrompt } from './src/prompt.mjs'
 import { resolveRoute } from './src/route.mjs'
 import { collectTurns } from './src/turns.mjs'
 
@@ -92,6 +92,34 @@ function readTurn(payload) {
     throw new TurnInsightError('bad-request', 'payload.turn must be a non-negative integer.')
   }
   return turn
+}
+
+/**
+ * Read the panel's transient prompt append.
+ *
+ * Absent, null, and whitespace-only all mean "use the default prompt", which is
+ * what keeps an untouched box byte-identical to the pre-append behaviour.
+ *
+ * @param payload - the decoded request body.
+ * @param settings - validated configuration supplying the length cap.
+ * @returns the trimmed append, or `''`.
+ * @throws {TurnInsightError} when the value is not a string or exceeds the cap.
+ */
+function readAppend(payload, settings) {
+  const value = payload.append
+  if (value === undefined || value === null) return ''
+  if (typeof value !== 'string') {
+    throw new TurnInsightError('bad-request', 'payload.append must be a string when present.')
+  }
+  const append = value.trim()
+  if (append.length > settings.maxAppendChars) {
+    throw new TurnInsightError(
+      'bad-request',
+      `payload.append must be at most ${settings.maxAppendChars} characters.`,
+      { maxAppendChars: settings.maxAppendChars, received: append.length },
+    )
+  }
+  return append
 }
 
 /** The provider/model of the session's last logged request header, when it has one. */
@@ -186,6 +214,7 @@ export function apply(ctx, rawConfig = {}) {
       const payload = await readJson(request)
       const sessionId = readSessionId(payload)
       const turn = readTurn(payload)
+      const append = readAppend(payload, settings)
       const { turns, route } = await readSession(ctx, settings, sessionId, request.signal)
       const target = turns.find(item => item.turn === turn)
       if (target === undefined) {
@@ -199,13 +228,13 @@ export function apply(ctx, rawConfig = {}) {
         : route
       const result = await runInterpretation(ctx.llm, {
         route: effectiveRoute,
-        system: SYSTEM_PROMPT,
+        system: buildSystemPrompt(append),
         user: buildAnalysisPrompt(target),
         maxOutputTokens: settings.maxOutputTokens,
         timeoutMs: settings.timeoutMs,
         signal: request.signal,
       })
-      return { sessionId, turn, route: effectiveRoute, ...result }
+      return { sessionId, turn, route: effectiveRoute, appendApplied: append !== '', ...result }
     }),
   })
 }
