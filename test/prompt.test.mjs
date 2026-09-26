@@ -44,13 +44,15 @@ test('dropped tool calls are surfaced to the model', () => {
   assert.equal(parsed.truncatedToolCalls, 7)
 })
 
-test('the system prompt fixes the untrusted boundary and asks for the three sections', () => {
+test('the system prompt fixes the untrusted boundary and asks for one fused paragraph', () => {
   assert.match(SYSTEM_PROMPT, /TURN_EVIDENCE_JSON_LENGTH=/u)
   assert.match(SYSTEM_PROMPT, /不可信/u)
   assert.match(SYSTEM_PROMPT, /不调用工具/u)
-  for (const section of ['这一轮在做什么', '判断', '下一步']) {
-    assert.ok(SYSTEM_PROMPT.includes(section), `system prompt names the "${section}" section`)
-  }
+  // The three former sections are a single paragraph now: one clause asks for
+  // it, and neither a numbered list nor bold section labels remain.
+  assert.ok(SYSTEM_PROMPT.includes('一段连贯的中文'))
+  assert.ok(!SYSTEM_PROMPT.includes('**'), 'no bold section labels')
+  assert.ok(!/^\s*\d\.\s/mu.test(SYSTEM_PROMPT), 'no numbered output sections')
 })
 
 test('the system prompt forbids enumerating individual tool calls', () => {
@@ -61,8 +63,10 @@ test('the system prompt forbids enumerating individual tool calls', () => {
 })
 
 test('the system prompt stays short enough not to invite a reasoning blowout', () => {
-  assert.ok(SYSTEM_PROMPT.length < 700, `system prompt is ${SYSTEM_PROMPT.length} characters`)
-  assert.ok(SYSTEM_PROMPT.includes('200 字以内'))
+  // The fused single-paragraph spec cut this from ~390 characters to well under
+  // 300; the cap keeps a future edit from growing it back.
+  assert.ok(SYSTEM_PROMPT.length < 350, `system prompt is ${SYSTEM_PROMPT.length} characters`)
+  assert.ok(SYSTEM_PROMPT.includes('150 字以内'))
 })
 
 test('an empty append leaves the default prompt byte-identical', () => {
