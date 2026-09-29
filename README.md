@@ -40,7 +40,7 @@
 
 ## 安装
 
-需要 Node.js 22.19.0+ 与 DSH Web（本包在 0.1.7-rc.2 上核对与实测）。
+需要 Node.js 22.19.0+ 与 DSH Web。本包在 **0.2.0-rc.1** 上逐字段核对并实测（此前 0.1.7-rc.2 亦实测通过）；`package.json` 的 `engines.dsh` 声明的就是这一核对基线。该字段仅作声明，DSH 当前的安装器与加载器都不强制检查它。
 
 本包**没有构建步骤**——`index.js`（宿主）与 `client.js`（浏览器 bundle）就是发布物，所以**不预先打包也能装**。三种装法的区别只在 profile 加载的是哪一份文件：
 
@@ -199,7 +199,7 @@ npm test    # node --test，覆盖配置校验、轮次折叠、模型解析、�
 
 | 文件 | 作用 |
 |---|---|
-| `index.js` | 宿主入口：校验配置、注册 `/turn-insight` 通道、读会话、解析模型、调 LLM |
+| `index.js` | 宿主入口：校验配置、注册 `/api/turn-insight.turns` 与 `/api/turn-insight.analyze` 两条精确 Fetch 路由、读会话、解析模型、调 LLM |
 | `client.js` | 浏览器 bundle：注册 `conversation.view` 的「解读」标签与面板 |
 | `src/config.mjs` | 配置校验与投影上限 |
 | `src/turns.mjs` | 会话事件 → 轮次 / 工具调用（纯函数） |

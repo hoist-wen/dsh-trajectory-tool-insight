@@ -32,7 +32,8 @@
     "manifestVersion": 1
   },
   "engines": {
-    "node": ">=22.19.0"
+    "node": ">=22.19.0",
+    "dsh": ">=0.2.0-rc.1"
   },
   "keywords": [
     "deepseek-harness",
