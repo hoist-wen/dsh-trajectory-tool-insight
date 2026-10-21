@@ -1,7 +1,7 @@
 # 轨迹工具调用解读 Trajectory Tool Insight
 
 给 DSH Web 的会话视图环加一个 **「解读」** 标签页，落在内置的「对话」「轨迹」旁边。
-页面按轮次列出**哪些轮次有工具调用**（只给次数与失败次数），每轮一个「分析」按钮，点击后由模型给出一段解读。
+页面按轮次列出**哪些轮次有工具调用**（调用次数、失败次数、被截断的调用数，以及该轮提示词摘要），每轮一个「分析」按钮，点击后由模型给出一段解读。
 
 **默认使用该会话正在使用的模型**（就是对话框模型选择器里当前那个），不需要额外配置模型。
 
@@ -40,29 +40,23 @@
 
 ## 安装
 
-需要 Node.js 22.19.0+ 与 DSH 桌面端。本包在 **0.2.0-rc.1** 上逐字段核对并实测（此前 0.1.7-rc.2 亦实测通过）；`package.json` 的 `engines.dsh` 声明的就是这一核对基线。该字段仅作声明，DSH 当前的安装器与加载器都不强制检查它。
+需要 Node.js 22.19.0+ 与 DSH 桌面端。本包在 **0.2.0-rc.1** 上逐字段核对并实测（此前 0.1.7-rc.2 亦实测通过）；`package.json` 的 `engines.dsh` 声明 `>=0.2.0-rc.1`，当前 0.2.1-rc.2 满足。该字段**会被 DSH 强制检查**：安装预检不满足会直接拒装，加载时 bundle 会被跳过、对应的 Loader 行会被禁用，所以不要把下限写得高于实际验证过的版本。
 
-本包**没有构建步骤**——`index.js`（宿主）与 `client.js`（浏览器 bundle）就是发布物，所以**不预先打包也能装**。两种装法都装进 `desktop` profile，区别只在 profile 加载的是哪一份文件：
+本包**没有构建步骤**——`index.js`（宿主）与 `client.js`（浏览器 bundle）就是发布物，不需要先打包：
 
-| 装法 | 命令 | profile 里记成 | 改了源码 |
-|---|---|---|---|
-| 本地 tarball（分发） | 先 `npm pack`，再 `dsh plugin --profile desktop add "…\hoist-wen-dsh-trajectory-tool-insight-0.1.5.tgz"` | `file:` 指向的 `.tgz` 快照 | 要重新 `npm pack` 并重装 |
-| git 远端 | `dsh plugin --profile desktop add github:hoist-wen/dsh-trajectory-tool-insight` | 从 GitHub 取的一份拷贝 | 不生效，需重新安装 |
+```shell
+dsh plugin --profile desktop add github:hoist-wen/dsh-trajectory-tool-insight
+```
 
-在源码目录的父目录里也可以写相对路径（`dsh plugin --profile desktop add ./dsh-trajectory-tool-insight`），CLI 会先把它解析成绝对路径；但**插件页与 `plugin_manager` 工具里必须填绝对路径**，相对路径会被拒绝（`a local path must be absolute`）。兼容性预检对目录形式直接读该目录的 `package.json`，不联网、不下载。
+装进 `desktop` profile，profile 里记成从 GitHub 取的一份拷贝；之后**改了源码不会自动生效**，需要重新安装。git 安装走的是远端快照，本包没有 `prepare` 脚本，所以不会被 pnpm 的依赖脚本审批（`allowBuilds`）拦住。
 
 重启 DSH 桌面端（或等 profile 热重载后刷新页面），打开任意非空会话即可看到「解读」标签。
 
-卸载（两种装法一样）：
+卸载：
 
 ```shell
 dsh plugin --profile desktop remove @hoist-wen/dsh-trajectory-tool-insight
 ```
-
-> **各自要留住什么**
->
-> - **tarball**：记成 `file:` 依赖，**别删那个 `.tgz`**，否则无法重装——它是派生物，删了可用 `npm pack` 随时重新生成，因此不必入库（`.gitignore` 已忽略 `*.tgz`）。
-> - **git**：装的是远端拷贝。本包没有 `prepare` 脚本，所以不会被 pnpm 的依赖脚本审批（`allowBuilds`）拦住。
 
 ## 它做了什么
 
@@ -70,8 +64,10 @@ dsh plugin --profile desktop remove @hoist-wen/dsh-trajectory-tool-insight
 
 | 路由 | 请求 | 响应 |
 |---|---|---|
-| `POST /api/trajectory-tool-insight.turns` | `{ sessionId }` | `{ ok, value: { totalTurns, turns[], route } }` |
-| `POST /api/trajectory-tool-insight.analyze` | `{ sessionId, turn }` | `{ ok, value: { text, route, usage, finish, truncated } }` |
+| `POST /api/trajectory-tool-insight.turns` | `{ sessionId }` | `{ ok, value: { sessionId, totalTurns, turns[], route } }` |
+| `POST /api/trajectory-tool-insight.analyze` | `{ sessionId, turn, override? }` | `{ ok, value: { sessionId, turn, route, overrideApplied, text, usage, finish, truncated } }` |
+
+`override` 就是面板上的「覆盖提示词」；省略或空白表示使用默认提示词，此时 `overrideApplied` 为 `false`。
 
 业务失败仍返回 HTTP 200 + `{ ok: false, error: { code, message, details } }`，面板据此给出可读提示；只有传输层（未鉴权 401 / 跨域 403）才是非 2xx。
 
