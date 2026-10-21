@@ -26,6 +26,7 @@
     "index.js",
     "client.js",
     "src",
+    "assets",
     "cordis.patch.yml",
     "dsh-plugin.naming.json",
     "README.md",
