@@ -42,11 +42,10 @@
 
 需要 Node.js 22.19.0+ 与 DSH 桌面端。本包在 **0.2.0-rc.1** 上逐字段核对并实测（此前 0.1.7-rc.2 亦实测通过）；`package.json` 的 `engines.dsh` 声明的就是这一核对基线。该字段仅作声明，DSH 当前的安装器与加载器都不强制检查它。
 
-本包**没有构建步骤**——`index.js`（宿主）与 `client.js`（浏览器 bundle）就是发布物，所以**不预先打包也能装**。三种装法都装进 `desktop` profile，区别只在 profile 加载的是哪一份文件：
+本包**没有构建步骤**——`index.js`（宿主）与 `client.js`（浏览器 bundle）就是发布物，所以**不预先打包也能装**。两种装法都装进 `desktop` profile，区别只在 profile 加载的是哪一份文件：
 
 | 装法 | 命令 | profile 里记成 | 改了源码 |
 |---|---|---|---|
-| 源码目录 | `dsh plugin --profile desktop add "C:\Users\zhila\wen\code\test\dsh-trajectory-tool-insight"` | `link:` + 指向该目录的链接 | 直接生效，不必重装 |
 | 本地 tarball（分发） | 先 `npm pack`，再 `dsh plugin --profile desktop add "…\dsh-plugin-trajectory-tool-insight-0.1.5.tgz"` | `file:` 指向的 `.tgz` 快照 | 要重新 `npm pack` 并重装 |
 | git 远端 | `dsh plugin --profile desktop add github:hoist-wen/dsh-trajectory-tool-insight` | 从 GitHub 取的一份拷贝 | 不生效，需重新安装 |
 
@@ -54,7 +53,7 @@
 
 重启 DSH 桌面端（或等 profile 热重载后刷新页面），打开任意非空会话即可看到「解读」标签。
 
-卸载（三种装法一样）：
+卸载（两种装法一样）：
 
 ```shell
 dsh plugin --profile desktop remove dsh-plugin-trajectory-tool-insight
@@ -62,7 +61,6 @@ dsh plugin --profile desktop remove dsh-plugin-trajectory-tool-insight
 
 > **各自要留住什么**
 >
-> - **源码目录**：链接指向源码树本身，**该目录不能移动或删除**，否则 profile 里的 `node_modules/dsh-plugin-trajectory-tool-insight` 变成悬空链接。pnpm **不会**为 `link:` 依赖安装它自己的依赖；本包零运行时依赖，所以无影响（以后若引入依赖，需在仓库目录自行 `pnpm install`）。
 > - **tarball**：记成 `file:` 依赖，**别删那个 `.tgz`**，否则无法重装——它是派生物，删了可用 `npm pack` 随时重新生成，因此不必入库（`.gitignore` 已忽略 `*.tgz`）。
 > - **git**：装的是远端拷贝。本包没有 `prepare` 脚本，所以不会被 pnpm 的依赖脚本审批（`allowBuilds`）拦住。
 
@@ -193,7 +191,7 @@ npm test    # node --test，覆盖配置校验、轮次折叠、模型解析、�
 
 无构建步骤：`index.js`（宿主）与 `client.js`（浏览器 bundle）都是直接编写并随包发布的源码。
 
-开发时按上面的「[源码目录](#安装)」装一次即可——profile 加载的就是这份源码，改完不必重新打包。宿主侧改动靠 profile 热重载或重启 DSH 桌面端生效；`client.js` 由 client-modules 在发布前快照、经 HMR 的 `rebuilt()` 进入启动图，**改动最稳的验证方式是重启 DSH 桌面端再刷新页面**。
+宿主侧改动靠 profile 热重载或重启 DSH 桌面端生效；`client.js` 由 client-modules 在发布前快照、经 HMR 的 `rebuilt()` 进入启动图，**改动最稳的验证方式是重启 DSH 桌面端再刷新页面**。
 
 | 文件 | 作用 |
 |---|---|
