@@ -66,8 +66,6 @@ dsh plugin --profile desktop remove dsh-plugin-trajectory-tool-insight
 > - **tarball**：记成 `file:` 依赖，**别删那个 `.tgz`**，否则无法重装——它是派生物，删了可用 `npm pack` 随时重新生成，因此不必入库（`.gitignore` 已忽略 `*.tgz`）。
 > - **git**：装的是远端拷贝。本包没有 `prepare` 脚本，所以不会被 pnpm 的依赖脚本审批（`allowBuilds`）拦住。
 
-> **`file:<目录>` 与裸目录路径不是一回事**：前者会被 pnpm 按 `files` 字段打成快照、复制进 `.pnpm`，改动源码不生效；只有裸路径那种（记成 `link:`）才是「改完即生效」。想开发就用裸路径。
-
 ## 它做了什么
 
 只有两条端点，都是共享 `/api` 通道上的**精确 Fetch 路由**，经浏览器鉴权后才到达：
