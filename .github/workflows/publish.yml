@@ -43,10 +43,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # No `registry-url` on purpose: it makes setup-node write an .npmrc with a
+      # placeholder _authToken (plus the deprecated `always-auth` key), i.e. the
+      # token-based path Trusted Publishing exists to remove.
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-          registry-url: 'https://registry.npmjs.org'
 
       # Node 22 ships npm 10.x, which predates Trusted Publishing.
       # OIDC publishing needs npm >= 11.5.1, so upgrade before publishing.
@@ -69,9 +71,9 @@ jobs:
         run: npm test
 
       # No NODE_AUTH_TOKEN on purpose: npm notices the OIDC environment and
-      # exchanges the GitHub-issued token for registry credentials itself.
+      # exchanges the GitHub-issued identity for registry credentials itself.
       - name: Publish
-        run: npm publish --access public --provenance
+        run: npm publish --access public --provenance --registry=https://registry.npmjs.org
 
       - name: Summarize
         run: |
