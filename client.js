@@ -59,59 +59,59 @@ window.__ModuleLoader__.load({
     }
 
     const STYLE_TEXT = `
-.tins-root {
-  --tins-line: var(--dsh-border, rgba(128, 138, 158, 0.24));
-  --tins-text: var(--dsh-text, inherit);
-  --tins-muted: var(--dsh-text-secondary, rgba(128, 138, 158, 0.95));
-  --tins-surface: var(--dsh-surface, rgba(128, 138, 158, 0.06));
-  --tins-alert: #b25c05;
+.ttis-root {
+  --ttis-line: var(--dsh-border, rgba(128, 138, 158, 0.24));
+  --ttis-text: var(--dsh-text, inherit);
+  --ttis-muted: var(--dsh-text-secondary, rgba(128, 138, 158, 0.95));
+  --ttis-surface: var(--dsh-surface, rgba(128, 138, 158, 0.06));
+  --ttis-alert: #b25c05;
   height: 100%;
   min-height: 0;
   overflow: auto;
   padding: 16px 20px 32px;
   font-size: 13px;
   line-height: 1.65;
-  color: var(--tins-text);
+  color: var(--ttis-text);
 }
-.tins-head {
+.ttis-head {
   display: flex;
   align-items: flex-start;
   gap: 12px;
   padding-bottom: 12px;
-  border-bottom: 1px solid var(--tins-line);
+  border-bottom: 1px solid var(--ttis-line);
 }
-.tins-head-text { flex: 1 1 auto; min-width: 0; }
-.tins-title { margin: 0; font-size: 14px; font-weight: 600; }
-.tins-sub { margin: 4px 0 0; color: var(--tins-muted); font-size: 12px; }
-.tins-head-side { display: flex; align-items: center; gap: 8px; flex: 0 0 auto; }
-.tins-route {
+.ttis-head-text { flex: 1 1 auto; min-width: 0; }
+.ttis-title { margin: 0; font-size: 14px; font-weight: 600; }
+.ttis-sub { margin: 4px 0 0; color: var(--ttis-muted); font-size: 12px; }
+.ttis-head-side { display: flex; align-items: center; gap: 8px; flex: 0 0 auto; }
+.ttis-route {
   max-width: 260px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   padding: 3px 8px;
-  border: 1px solid var(--tins-line);
+  border: 1px solid var(--ttis-line);
   border-radius: 999px;
-  color: var(--tins-muted);
+  color: var(--ttis-muted);
   font-size: 11px;
 }
-.tins-route-missing { color: var(--tins-alert); border-color: currentColor; }
-.tins-btn {
+.ttis-route-missing { color: var(--ttis-alert); border-color: currentColor; }
+.ttis-btn {
   font: inherit;
   font-size: 12px;
   padding: 4px 10px;
-  border: 1px solid var(--tins-line);
+  border: 1px solid var(--ttis-line);
   border-radius: 6px;
   background: transparent;
   color: inherit;
   cursor: pointer;
 }
-.tins-btn:hover:not(:disabled) { background: var(--tins-surface); }
-.tins-btn:disabled { opacity: 0.55; cursor: default; }
-.tins-btn-primary { border-color: currentColor; font-weight: 600; }
-.tins-append { padding: 10px 0 2px; }
-.tins-append-label { display: block; font-size: 11px; font-weight: 600; margin-bottom: 4px; }
-.tins-append-input {
+.ttis-btn:hover:not(:disabled) { background: var(--ttis-surface); }
+.ttis-btn:disabled { opacity: 0.55; cursor: default; }
+.ttis-btn-primary { border-color: currentColor; font-weight: 600; }
+.ttis-append { padding: 10px 0 2px; }
+.ttis-append-label { display: block; font-size: 11px; font-weight: 600; margin-bottom: 4px; }
+.ttis-append-input {
   display: block;
   width: 100%;
   box-sizing: border-box;
@@ -120,42 +120,42 @@ window.__ModuleLoader__.load({
   font-size: 12px;
   line-height: 1.55;
   padding: 6px 8px;
-  border: 1px solid var(--tins-line);
+  border: 1px solid var(--ttis-line);
   border-radius: 6px;
   background: transparent;
   color: inherit;
 }
-.tins-append-input:focus { outline: none; border-color: currentColor; }
-.tins-append-note { margin: 4px 0 0; color: var(--tins-muted); font-size: 11px; }
-.tins-body { padding-top: 8px; }
-.tins-empty { color: var(--tins-muted); padding: 24px 0; }
-.tins-turn { padding: 12px 0; border-bottom: 1px solid var(--tins-line); }
-.tins-turn-head { display: flex; align-items: center; gap: 10px; }
-.tins-turn-no { font-weight: 600; }
-.tins-turn-count { flex: 1 1 auto; color: var(--tins-muted); font-size: 12px; }
-.tins-prompt {
+.ttis-append-input:focus { outline: none; border-color: currentColor; }
+.ttis-append-note { margin: 4px 0 0; color: var(--ttis-muted); font-size: 11px; }
+.ttis-body { padding-top: 8px; }
+.ttis-empty { color: var(--ttis-muted); padding: 24px 0; }
+.ttis-turn { padding: 12px 0; border-bottom: 1px solid var(--ttis-line); }
+.ttis-turn-head { display: flex; align-items: center; gap: 10px; }
+.ttis-turn-no { font-weight: 600; }
+.ttis-turn-count { flex: 1 1 auto; color: var(--ttis-muted); font-size: 12px; }
+.ttis-prompt {
   margin: 6px 0 0;
   padding: 6px 10px;
-  border-left: 2px solid var(--tins-line);
-  color: var(--tins-muted);
+  border-left: 2px solid var(--ttis-line);
+  color: var(--ttis-muted);
   font-size: 12px;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
-.tins-analysis { margin-top: 10px; padding: 10px 12px; border: 1px solid var(--tins-line); border-radius: 8px; background: var(--tins-surface); }
-.tins-analysis-head { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; font-size: 11px; font-weight: 600; }
-.tins-analysis-head .tins-muted { font-weight: 400; flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.tins-analysis-error { background: transparent; border-color: var(--tins-alert); }
-.tins-warn { color: var(--tins-alert); font-weight: 400; }
-.tins-muted { color: var(--tins-muted); }
-.tins-code { margin: 4px 0 0; font-size: 11px; color: var(--tins-muted); }
-.tins-text p { margin: 0 0 6px; overflow-wrap: anywhere; }
-.tins-text p:last-child { margin-bottom: 0; }
-.tins-h { font-weight: 600; }
-.tins-li { padding-left: 14px; position: relative; }
-.tins-li::before { content: '·'; position: absolute; left: 4px; color: var(--tins-muted); }
-.tins-gap { height: 4px; }
-.tins-text code {
+.ttis-analysis { margin-top: 10px; padding: 10px 12px; border: 1px solid var(--ttis-line); border-radius: 8px; background: var(--ttis-surface); }
+.ttis-analysis-head { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; font-size: 11px; font-weight: 600; }
+.ttis-analysis-head .ttis-muted { font-weight: 400; flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ttis-analysis-error { background: transparent; border-color: var(--ttis-alert); }
+.ttis-warn { color: var(--ttis-alert); font-weight: 400; }
+.ttis-muted { color: var(--ttis-muted); }
+.ttis-code { margin: 4px 0 0; font-size: 11px; color: var(--ttis-muted); }
+.ttis-text p { margin: 0 0 6px; overflow-wrap: anywhere; }
+.ttis-text p:last-child { margin-bottom: 0; }
+.ttis-h { font-weight: 600; }
+.ttis-li { padding-left: 14px; position: relative; }
+.ttis-li::before { content: '·'; position: absolute; left: 4px; color: var(--ttis-muted); }
+.ttis-gap { height: 4px; }
+.ttis-text code {
   padding: 1px 4px;
   border-radius: 4px;
   background: rgba(128, 138, 158, 0.18);
@@ -239,13 +239,13 @@ window.__ModuleLoader__.load({
     /** Minimal Markdown pass: headings, bullets, bold, inline code, paragraphs. */
     function renderText(text) {
       const lines = String(text).split(/\r?\n/u)
-      return h('div', { className: 'tins-text' }, lines.map((line, index) => {
+      return h('div', { className: 'ttis-text' }, lines.map((line, index) => {
         const trimmed = line.trim()
-        if (trimmed === '') return h('div', { className: 'tins-gap', key: `gap-${index}` })
+        if (trimmed === '') return h('div', { className: 'ttis-gap', key: `gap-${index}` })
         const heading = /^#{1,6}\s+(.*)$/u.exec(trimmed)
-        if (heading !== null) return h('p', { className: 'tins-h', key: `h-${index}` }, inline(heading[1], `h${index}`))
+        if (heading !== null) return h('p', { className: 'ttis-h', key: `h-${index}` }, inline(heading[1], `h${index}`))
         const bullet = /^(?:[-*]|\d+\.)\s+(.*)$/u.exec(trimmed)
-        if (bullet !== null) return h('p', { className: 'tins-li', key: `li-${index}` }, inline(bullet[1], `li${index}`))
+        if (bullet !== null) return h('p', { className: 'ttis-li', key: `li-${index}` }, inline(bullet[1], `li${index}`))
         return h('p', { key: `p-${index}` }, inline(trimmed, `p${index}`))
       }))
     }
@@ -266,40 +266,40 @@ window.__ModuleLoader__.load({
         failed > 0 ? `${failed} 次失败` : '',
         entry.droppedToolCalls > 0 ? `另有 ${entry.droppedToolCalls} 次未纳入` : '',
       ].filter(Boolean).join(' · ')
-      return h('section', { className: 'tins-turn', key: entry.turn },
-        h('div', { className: 'tins-turn-head' },
-          h('span', { className: 'tins-turn-no' }, `第 ${entry.turn} 轮`),
-          h('span', { className: 'tins-turn-count' }, summary),
+      return h('section', { className: 'ttis-turn', key: entry.turn },
+        h('div', { className: 'ttis-turn-head' },
+          h('span', { className: 'ttis-turn-no' }, `第 ${entry.turn} 轮`),
+          h('span', { className: 'ttis-turn-count' }, summary),
           h('button', {
-            className: 'tins-btn tins-btn-primary',
+            className: 'ttis-btn ttis-btn-primary',
             type: 'button',
             disabled: running,
             onClick: () => onAnalyze(entry.turn),
           }, running ? '分析中…' : analysis ? '重新分析' : '分析'),
         ),
-        entry.prompt ? h('p', { className: 'tins-prompt' }, entry.prompt) : null,
+        entry.prompt ? h('p', { className: 'ttis-prompt' }, entry.prompt) : null,
         analysis ? analysisPanel(analysis) : null,
       )
     }
 
     function analysisPanel(analysis) {
       if (analysis.status === 'running') {
-        return h('div', { className: 'tins-analysis' }, h('p', { className: 'tins-muted' }, '正在调用模型解读这一轮…'))
+        return h('div', { className: 'ttis-analysis' }, h('p', { className: 'ttis-muted' }, '正在调用模型解读这一轮…'))
       }
       if (analysis.status === 'error') {
-        return h('div', { className: 'tins-analysis tins-analysis-error' },
+        return h('div', { className: 'ttis-analysis ttis-analysis-error' },
           h('p', null, analysis.error.message),
-          analysis.error.hint ? h('p', { className: 'tins-muted' }, analysis.error.hint) : null,
-          analysis.error.code ? h('p', { className: 'tins-code' }, analysis.error.code) : null,
+          analysis.error.hint ? h('p', { className: 'ttis-muted' }, analysis.error.hint) : null,
+          analysis.error.code ? h('p', { className: 'ttis-code' }, analysis.error.code) : null,
         )
       }
-      return h('div', { className: 'tins-analysis' },
-        h('div', { className: 'tins-analysis-head' },
+      return h('div', { className: 'ttis-analysis' },
+        h('div', { className: 'ttis-analysis-head' },
           h('span', null, '解读'),
           analysis.route
-            ? h('span', { className: 'tins-muted' }, `${analysis.route.provider} / ${analysis.route.model}`)
+            ? h('span', { className: 'ttis-muted' }, `${analysis.route.provider} / ${analysis.route.model}`)
             : null,
-          analysis.truncated ? h('span', { className: 'tins-warn' }, '输出被 maxTokens 截断') : null,
+          analysis.truncated ? h('span', { className: 'ttis-warn' }, '输出被 maxTokens 截断') : null,
         ),
         renderText(analysis.text),
       )
@@ -368,56 +368,56 @@ window.__ModuleLoader__.load({
       }, [])
 
       if (sessionId === '') {
-        return h('div', { className: 'tins-root' }, h('p', { className: 'tins-empty' }, '请先打开一个会话。'))
+        return h('div', { className: 'ttis-root' }, h('p', { className: 'ttis-empty' }, '请先打开一个会话。'))
       }
 
       const route = listing.route
       const busy = listing.status === 'loading' || listing.status === 'refreshing'
       const appendLength = append.trim().length
-      return h('div', { className: 'tins-root' },
-        h('header', { className: 'tins-head' },
-          h('div', { className: 'tins-head-text' },
-            h('h2', { className: 'tins-title' }, '轨迹工具调用解读'),
-            h('p', { className: 'tins-sub' }, subtitle(listing)),
+      return h('div', { className: 'ttis-root' },
+        h('header', { className: 'ttis-head' },
+          h('div', { className: 'ttis-head-text' },
+            h('h2', { className: 'ttis-title' }, '轨迹工具调用解读'),
+            h('p', { className: 'ttis-sub' }, subtitle(listing)),
           ),
-          h('div', { className: 'tins-head-side' },
+          h('div', { className: 'ttis-head-side' },
             route
-              ? h('span', { className: 'tins-route', title: `${route.provider} / ${route.model}` },
+              ? h('span', { className: 'ttis-route', title: `${route.provider} / ${route.model}` },
                 `${ROUTE_SOURCE_LABELS[route.source] ?? route.source} · ${route.model}`)
-              : h('span', { className: 'tins-route tins-route-missing' }, '未确定模型'),
+              : h('span', { className: 'ttis-route ttis-route-missing' }, '未确定模型'),
             h('button', {
-              className: 'tins-btn',
+              className: 'ttis-btn',
               type: 'button',
               disabled: busy,
               onClick: () => setReloadToken(token => token + 1),
             }, busy ? '刷新中…' : '刷新'),
           ),
         ),
-        h('div', { className: 'tins-append' },
-          h('label', { className: 'tins-append-label', htmlFor: 'tins-append-input' }, '附加提示词（可选）'),
+        h('div', { className: 'ttis-append' },
+          h('label', { className: 'ttis-append-label', htmlFor: 'ttis-append-input' }, '附加提示词（可选）'),
           h('textarea', {
-            id: 'tins-append-input',
-            className: 'tins-append-input',
+            id: 'ttis-append-input',
+            className: 'ttis-append-input',
             rows: 2,
             value: append,
             placeholder: '追加到解读提示词后面，例如：只关注风险，不要复述过程。留空则用默认提示词。',
             onChange: event => updateAppend(event.target.value),
           }),
-          h('p', { className: 'tins-append-note' }, appendLength === 0
+          h('p', { className: 'ttis-append-note' }, appendLength === 0
             ? '留空 = 默认提示词；只影响后续的「分析」，不写入会话日志。'
             : `将附加 ${appendLength} 个字符到解读提示词（对所有轮次的「分析」生效，不写入会话日志）。`),
         ),
-        h('div', { className: 'tins-body' },
+        h('div', { className: 'ttis-body' },
           listing.status === 'error'
-            ? h('div', { className: 'tins-analysis tins-analysis-error' },
+            ? h('div', { className: 'ttis-analysis ttis-analysis-error' },
               h('p', null, listing.error.message),
-              listing.error.hint ? h('p', { className: 'tins-muted' }, listing.error.hint) : null,
-              listing.error.code ? h('p', { className: 'tins-code' }, listing.error.code) : null,
+              listing.error.hint ? h('p', { className: 'ttis-muted' }, listing.error.hint) : null,
+              listing.error.code ? h('p', { className: 'ttis-code' }, listing.error.code) : null,
             )
             : listing.status === 'loading'
-              ? h('p', { className: 'tins-empty' }, '正在读取会话轨迹…')
+              ? h('p', { className: 'ttis-empty' }, '正在读取会话轨迹…')
               : listing.turns.length === 0
-                ? h('p', { className: 'tins-empty' }, '这个会话还没有带工具调用的轮次。')
+                ? h('p', { className: 'ttis-empty' }, '这个会话还没有带工具调用的轮次。')
                 : listing.turns.map(entry => turnCard(entry, analyses.get(entry.turn), analyze)),
         ),
       )
