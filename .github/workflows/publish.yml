@@ -1,0 +1,55 @@
+# Publish this package to npm.
+#
+# Two entry points:
+# - pushing a `v*` tag publishes that tag (after checking it matches
+#   package.json's version);
+# - running the workflow manually publishes the version currently on the
+#   chosen branch, which is how the very first release can go out without
+#   re-creating a tag.
+#
+# Required repository secret: NPM_TOKEN — an npm automation/granular token
+# with publish rights for @hoist-wen. Provenance needs `id-token: write`.
+
+name: publish
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+concurrency:
+  group: npm-publish
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Tag and package.json must agree
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          version="$(node -p "require('./package.json').version")"
+          if [ "$tag" != "$version" ]; then
+            echo "tag v$tag does not match package.json version $version" >&2
+            exit 1
+          fi
+
+      - name: Test
+        run: npm test
+
+      - name: Publish
+        run: npm publish --access public --provenance
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
