@@ -215,7 +215,7 @@ function recordingLlm() {
   }
 }
 
-test('an absent append sends the default system prompt unchanged', async () => {
+test('an absent override sends the default system prompt unchanged', async () => {
   const host = await import(new URL('index.js', root))
   const { SYSTEM_PROMPT } = await import(new URL('src/prompt.mjs', root))
   const llm = recordingLlm()
@@ -225,60 +225,58 @@ test('an absent append sends the default system prompt unchanged', async () => {
   })
 
   assert.equal(answer.ok, true)
-  assert.equal(answer.value.appendApplied, false)
+  assert.equal(answer.value.overrideApplied, false)
   assert.equal(answer.value.text, '解读结果')
   assert.equal(llm.calls.length, 1)
   assert.equal(llm.calls[0].system, SYSTEM_PROMPT)
 })
 
-test('an append is trimmed onto the system prompt and reported as applied', async () => {
+test('an override replaces the system prompt and is reported as applied', async () => {
   const host = await import(new URL('index.js', root))
-  const { SYSTEM_PROMPT } = await import(new URL('src/prompt.mjs', root))
   const llm = recordingLlm()
   const answer = await callRoute(host, '/api/trajectory-tool-insight.analyze', {
     sessionId: 's',
     turn: 1,
-    append: '  只看风险，不要复述过程。  ',
+    override: '  只看风险，不要复述过程。  ',
   }, {
     sessionQuery: { observeSession: async () => observationWithOneTurn() },
     llm,
   })
 
   assert.equal(answer.ok, true)
-  assert.equal(answer.value.appendApplied, true)
-  const { system } = llm.calls[0]
-  assert.ok(system.startsWith(SYSTEM_PROMPT))
-  assert.ok(system.includes('只看风险，不要复述过程。'))
-  // The evidence envelope is untouched by the append.
-  assert.ok(llm.calls[0].messages[0].content[0].text.startsWith('TURN_EVIDENCE_JSON_LENGTH='))
+  assert.equal(answer.value.overrideApplied, true)
+  const { system, messages } = llm.calls[0]
+  assert.equal(system, '只看风险，不要复述过程。')
+  // The evidence envelope is untouched by the override.
+  assert.ok(messages[0].content[0].text.startsWith('TURN_EVIDENCE_JSON_LENGTH='))
 })
 
-test('the append is validated at the boundary', async () => {
+test('the override is validated at the boundary', async () => {
   const host = await import(new URL('index.js', root))
   const extra = { sessionQuery: { observeSession: async () => observationWithOneTurn() }, llm: recordingLlm() }
 
-  const wrongType = await callRoute(host, '/api/trajectory-tool-insight.analyze', { sessionId: 's', turn: 1, append: 42 }, extra)
+  const wrongType = await callRoute(host, '/api/trajectory-tool-insight.analyze', { sessionId: 's', turn: 1, override: 42 }, extra)
   assert.equal(wrongType.ok, false)
   assert.equal(wrongType.error.code, 'bad-request')
-  assert.match(wrongType.error.message, /append/u)
+  assert.match(wrongType.error.message, /override/u)
 
   const tooLong = await callRoute(host, '/api/trajectory-tool-insight.analyze', {
     sessionId: 's',
     turn: 1,
-    append: 'x'.repeat(2_001),
+    override: 'x'.repeat(2_001),
   }, extra)
   assert.equal(tooLong.ok, false)
   assert.equal(tooLong.error.code, 'bad-request')
-  assert.equal(tooLong.error.details.maxAppendChars, 2_000)
+  assert.equal(tooLong.error.details.maxOverrideChars, 2_000)
   assert.equal(tooLong.error.details.received, 2_001)
 
-  // A whitespace-only append is "empty", so it must not be rejected as long.
-  const blank = await callRoute(host, '/api/trajectory-tool-insight.analyze', { sessionId: 's', turn: 1, append: '   ' }, extra)
+  // A whitespace-only override is "empty", so it must not be rejected as long.
+  const blank = await callRoute(host, '/api/trajectory-tool-insight.analyze', { sessionId: 's', turn: 1, override: '   ' }, extra)
   assert.equal(blank.ok, true)
-  assert.equal(blank.value.appendApplied, false)
+  assert.equal(blank.value.overrideApplied, false)
 })
 
-test('maxAppendChars is enforced from configuration, not hard-coded', async () => {
+test('maxOverrideChars is enforced from configuration, not hard-coded', async () => {
   const host = await import(new URL('index.js', root))
   const routes = []
   const llm = recordingLlm()
@@ -287,10 +285,10 @@ test('maxAppendChars is enforced from configuration, not hard-coded', async () =
     sessionQuery: { observeSession: async () => observationWithOneTurn() },
     llm,
     connection: { fetch: { register: route => { routes.push(route); return () => {} } } },
-  }, { maxAppendChars: 5 })
+  }, { maxOverrideChars: 5 })
 
   const route = routes.find(candidate => candidate.path === '/api/trajectory-tool-insight.analyze')
-  const answer = await (await route.fetch(request({ sessionId: 's', turn: 1, append: '123456' }))).json()
+  const answer = await (await route.fetch(request({ sessionId: 's', turn: 1, override: '123456' }))).json()
   assert.equal(answer.ok, false)
-  assert.equal(answer.error.details.maxAppendChars, 5)
+  assert.equal(answer.error.details.maxOverrideChars, 5)
 })

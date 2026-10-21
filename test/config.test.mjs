@@ -80,10 +80,10 @@ test('reasoningEffort defaults to low and can be reset to inherit', () => {
   assert.throws(() => normalizeConfig({ reasoningEffort: 3 }), /config\.reasoningEffort must be a string/u)
 })
 
-test('maxAppendChars bounds the panel append and accepts zero as "no append"', () => {
-  assert.equal(CONFIG_DEFAULTS.maxAppendChars, 2_000)
-  assert.equal(normalizeConfig({ maxAppendChars: 0 }).maxAppendChars, 0)
-  assert.equal(normalizeConfig({ maxAppendChars: 20_000 }).maxAppendChars, 20_000)
-  assert.throws(() => normalizeConfig({ maxAppendChars: 20_001 }), /config\.maxAppendChars/u)
-  assert.throws(() => normalizeConfig({ maxAppendChars: -1 }), /config\.maxAppendChars/u)
+test('maxOverrideChars bounds the panel override and accepts zero as "no override"', () => {
+  assert.equal(CONFIG_DEFAULTS.maxOverrideChars, 2_000)
+  assert.equal(normalizeConfig({ maxOverrideChars: 0 }).maxOverrideChars, 0)
+  assert.equal(normalizeConfig({ maxOverrideChars: 20_000 }).maxOverrideChars, 20_000)
+  assert.throws(() => normalizeConfig({ maxOverrideChars: 20_001 }), /config\.maxOverrideChars/u)
+  assert.throws(() => normalizeConfig({ maxOverrideChars: -1 }), /config\.maxOverrideChars/u)
 })

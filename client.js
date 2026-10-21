@@ -30,12 +30,12 @@ window.__ModuleLoader__.load({
     const ANALYZE_PATH = '/api/trajectory-tool-insight.analyze'
 
     /**
-     * Transient per-session append notes. Module-level on purpose: the view is
-     * unmounted whenever the user switches tabs, and a steering note typed one
-     * moment ago should still be there on the way back — but it must not
-     * outlive the page, because it is not saved state.
+     * Transient per-session system-prompt overrides. Module-level on purpose:
+     * the view is unmounted whenever the user switches tabs, and a replacement
+     * prompt typed one moment ago should still be there on the way back — but
+     * it must not outlive the page, because it is not saved state.
      */
-    const appendNotes = new Map()
+    const overrideNotes = new Map()
 
     const ROUTE_SOURCE_LABELS = {
       session: '当前会话',
@@ -109,9 +109,9 @@ window.__ModuleLoader__.load({
 .ttis-btn:hover:not(:disabled) { background: var(--ttis-surface); }
 .ttis-btn:disabled { opacity: 0.55; cursor: default; }
 .ttis-btn-primary { border-color: currentColor; font-weight: 600; }
-.ttis-append { padding: 10px 0 2px; }
-.ttis-append-label { display: block; font-size: 11px; font-weight: 600; margin-bottom: 4px; }
-.ttis-append-input {
+.ttis-override { padding: 10px 0 2px; }
+.ttis-override-label { display: block; font-size: 11px; font-weight: 600; margin-bottom: 4px; }
+.ttis-override-input {
   display: block;
   width: 100%;
   box-sizing: border-box;
@@ -125,8 +125,8 @@ window.__ModuleLoader__.load({
   background: transparent;
   color: inherit;
 }
-.ttis-append-input:focus { outline: none; border-color: currentColor; }
-.ttis-append-note { margin: 4px 0 0; color: var(--ttis-muted); font-size: 11px; }
+.ttis-override-input:focus { outline: none; border-color: currentColor; }
+.ttis-override-note { margin: 4px 0 0; color: var(--ttis-muted); font-size: 11px; }
 .ttis-body { padding-top: 8px; }
 .ttis-empty { color: var(--ttis-muted); padding: 24px 0; }
 .ttis-turn { padding: 12px 0; border-bottom: 1px solid var(--ttis-line); }
@@ -211,11 +211,11 @@ window.__ModuleLoader__.load({
       }
       return {
         listTurns: signal => call(TURNS_PATH, { sessionId }, signal),
-        // An empty append is omitted entirely, so an untouched box produces
+        // An empty override is omitted entirely, so an untouched box produces
         // exactly the request the plugin made before the box existed.
-        analyzeTurn: (turn, append, signal) => call(
+        analyzeTurn: (turn, override, signal) => call(
           ANALYZE_PATH,
-          { sessionId, turn, ...(append ? { append } : {}) },
+          { sessionId, turn, ...(override ? { override } : {}) },
           signal,
         ),
       }
@@ -316,17 +316,17 @@ window.__ModuleLoader__.load({
       const [listing, setListing] = useState({ status: 'loading', turns: [], totalTurns: 0, route: null, error: null })
       const [analyses, setAnalyses] = useState(() => new Map())
       const [reloadToken, setReloadToken] = useState(0)
-      // Seeded from the module-level store so the note survives this view being
-      // unmounted and remounted, while still dying with the page: it is a
-      // transient steering note, not saved state.
-      const [append, setAppend] = useState(() => appendNotes.get(sessionId) ?? '')
-      const appendRef = useRef(append)
-      appendRef.current = append
+      // Seeded from the module-level store so the override survives this view
+      // being unmounted and remounted, while still dying with the page: it is
+      // transient instruction text, not saved state.
+      const [override, setOverride] = useState(() => overrideNotes.get(sessionId) ?? '')
+      const overrideRef = useRef(override)
+      overrideRef.current = override
 
-      const updateAppend = useCallback(value => {
-        setAppend(value)
-        if (value.trim() === '') appendNotes.delete(sessionId)
-        else appendNotes.set(sessionId, value)
+      const updateOverride = useCallback(value => {
+        setOverride(value)
+        if (value.trim() === '') overrideNotes.delete(sessionId)
+        else overrideNotes.set(sessionId, value)
       }, [sessionId])
 
       useEffect(() => {
@@ -355,7 +355,7 @@ window.__ModuleLoader__.load({
 
       const analyze = useCallback(turn => {
         setAnalyses(previous => new Map(previous).set(turn, { status: 'running' }))
-        apiRef.current.analyzeTurn(turn, appendRef.current.trim()).then(value => {
+        apiRef.current.analyzeTurn(turn, overrideRef.current.trim()).then(value => {
           setAnalyses(previous => new Map(previous).set(turn, {
             status: 'ready',
             text: typeof value?.text === 'string' ? value.text : '',
@@ -373,7 +373,7 @@ window.__ModuleLoader__.load({
 
       const route = listing.route
       const busy = listing.status === 'loading' || listing.status === 'refreshing'
-      const appendLength = append.trim().length
+      const overrideLength = override.trim().length
       return h('div', { className: 'ttis-root' },
         h('header', { className: 'ttis-head' },
           h('div', { className: 'ttis-head-text' },
@@ -393,19 +393,19 @@ window.__ModuleLoader__.load({
             }, busy ? '刷新中…' : '刷新'),
           ),
         ),
-        h('div', { className: 'ttis-append' },
-          h('label', { className: 'ttis-append-label', htmlFor: 'ttis-append-input' }, '附加提示词（可选）'),
+        h('div', { className: 'ttis-override' },
+          h('label', { className: 'ttis-override-label', htmlFor: 'ttis-override-input' }, '覆盖提示词（可选）'),
           h('textarea', {
-            id: 'ttis-append-input',
-            className: 'ttis-append-input',
+            id: 'ttis-override-input',
+            className: 'ttis-override-input',
             rows: 2,
-            value: append,
-            placeholder: '追加到解读提示词后面，例如：只关注风险，不要复述过程。留空则用默认提示词。',
-            onChange: event => updateAppend(event.target.value),
+            value: override,
+            placeholder: '非空时完全替换默认系统提示词，例如：只关注风险，不要复述过程。留空则使用默认提示词。',
+            onChange: event => updateOverride(event.target.value),
           }),
-          h('p', { className: 'ttis-append-note' }, appendLength === 0
-            ? '留空 = 默认提示词；只影响后续的「分析」，不写入会话日志。'
-            : `将附加 ${appendLength} 个字符到解读提示词（对所有轮次的「分析」生效，不写入会话日志）。`),
+          h('p', { className: 'ttis-override-note' }, overrideLength === 0
+            ? '留空 = 使用默认提示词；填写后将完全替换系统提示词。只影响后续的「分析」，不写入会话日志。'
+            : `将用 ${overrideLength} 个字符覆盖解读提示词（对所有轮次的「分析」生效，不写入会话日志）。默认提示词的安全边界也会被一并替换。`),
         ),
         h('div', { className: 'ttis-body' },
           listing.status === 'error'

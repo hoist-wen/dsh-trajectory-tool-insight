@@ -183,7 +183,7 @@ test('the injected face is session-addressed and posts to the exact /api routes'
   assert.equal(calls[0].headers['content-type'], 'application/json')
 })
 
-test('an empty append is omitted from the analyze request entirely', async () => {
+test('an empty override is omitted from the analyze request entirely', async () => {
   const { state, calls } = mount()
   const face = state.registration.options.inject('session-1')
 
@@ -192,17 +192,17 @@ test('an empty append is omitted from the analyze request entirely', async () =>
 
   for (const call of calls) {
     assert.deepEqual(call.body, { sessionId: 'session-1', turn: 3 })
-    assert.ok(!('append' in call.body))
+    assert.ok(!('override' in call.body))
   }
 })
 
-test('a non-empty append rides along with the analyze request', async () => {
+test('a non-empty override rides along with the analyze request', async () => {
   const { state, calls } = mount()
   const face = state.registration.options.inject('session-1')
 
   await face.api.analyzeTurn(3, '只看风险')
 
-  assert.deepEqual(calls[0].body, { sessionId: 'session-1', turn: 3, append: '只看风险' })
+  assert.deepEqual(calls[0].body, { sessionId: 'session-1', turn: 3, override: '只看风险' })
 })
 
 test('a structured host failure becomes a coded Error the panel can explain', async () => {
@@ -339,13 +339,13 @@ test('the view asks for a session first when it has none', () => {
   assert.match(text, /请先打开一个会话/u)
 })
 
-test('the panel offers an empty append box whose note says empty means default', () => {
+test('the panel offers an empty override box whose note says empty means default', () => {
   const state = mount().state
   const tree = renderTree(state, 'session-1')
   const text = collectText(tree).join(' ')
 
-  assert.match(text, /附加提示词（可选）/u)
-  assert.match(text, /留空 = 默认提示词/u)
+  assert.match(text, /覆盖提示词（可选）/u)
+  assert.match(text, /留空 = 使用默认提示词/u)
 
   const textarea = collectElements(tree).find(element => element.type === 'textarea')
   assert.ok(textarea, 'the panel renders a textarea')
@@ -353,25 +353,25 @@ test('the panel offers an empty append box whose note says empty means default',
   assert.equal(typeof textarea.props.onChange, 'function')
 })
 
-test('a typed append is shown with its length and is what analyze sends', async () => {
+test('a typed override is shown with its length and is what analyze sends', async () => {
   const typed = '  只看风险，不要复述过程。 '
   const listing = { status: 'ready', totalTurns: 1, route: null, error: null, turns: [] }
   const { state, calls } = mount({ stateSeeds: [listing, new Map(), 0, typed] })
   const tree = renderTree(state, 'session-1')
   const text = collectText(tree).join(' ')
 
-  assert.match(text, new RegExp(`将附加 ${typed.trim().length} 个字符到解读提示词`, 'u'))
-  assert.ok(!text.includes('留空 = 默认提示词'))
+  assert.match(text, new RegExp(`将用 ${typed.trim().length} 个字符覆盖解读提示词`, 'u'))
+  assert.ok(!text.includes('留空 = 使用默认提示词'))
 
   const textarea = collectElements(tree).find(element => element.type === 'textarea')
   assert.equal(textarea.props.value, typed)
 
   // Exactly what the analyze button sends: trimmed, and only then.
   await state.registration.options.inject('session-1').api.analyzeTurn(1, textarea.props.value.trim())
-  assert.deepEqual(calls[0].body, { sessionId: 'session-1', turn: 1, append: typed.trim() })
+  assert.deepEqual(calls[0].body, { sessionId: 'session-1', turn: 1, override: typed.trim() })
 })
 
-test('the append note survives a remount for its own session only', () => {
+test('the override survives a remount for its own session only', () => {
   // The bundle factory runs once per page, so the module-level store lives as
   // long as the page: a note typed before tabbing away is still there on the
   // way back, and never leaks into another session's panel.

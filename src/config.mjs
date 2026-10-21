@@ -56,11 +56,11 @@ export const CONFIG_DEFAULTS = Object.freeze({
   maxOutputTokens: 1_500,
   timeoutMs: 120_000,
   /**
-   * Longest operator-supplied prompt append the panel may send. The box exists
-   * for a transient steering note, not for pasting a document: the append is
-   * concatenated onto the system prompt on every analyze call.
+   * Longest operator-supplied system prompt the panel may send. A non-empty
+   * value replaces the default prompt entirely for that analyze call, so the
+   * cap applies to a full system instruction rather than to a steering note.
    */
-  maxAppendChars: 2_000,
+  maxOverrideChars: 2_000,
 })
 
 const NUMBER_BOUNDS = Object.freeze({
@@ -72,7 +72,7 @@ const NUMBER_BOUNDS = Object.freeze({
   maxAssistantChars: [80, 8_000],
   maxOutputTokens: [64, 32_000],
   timeoutMs: [1_000, 900_000],
-  maxAppendChars: [0, 20_000],
+  maxOverrideChars: [0, 20_000],
 })
 
 const STRING_KEYS = Object.freeze(['defaultProvider', 'defaultModel', 'reasoningEffort'])
