@@ -1,56 +1,29 @@
 # 轨迹工具调用解读 Trajectory Tool Insight
 
-给 DSH Web 的会话视图环加一个 **「解读」** 标签页，落在内置的「对话」「轨迹」旁边。
-页面按轮次列出**哪些轮次有工具调用**（调用次数、失败次数、被截断的调用数，以及该轮提示词摘要），每轮一个「分析」按钮，点击后由模型给出一段解读。
+给 DSH Web 的会话视图环加一个 **「解读」** 标签，坐在「对话」「轨迹」旁边。
 
-**默认使用该会话正在使用的模型**（就是对话框模型选择器里当前那个），不需要额外配置模型。
+按轮次列出**哪些轮次有工具调用**（调用次数、失败数、被截断数、提示词摘要），每轮一个「分析」按钮，点了由模型给出一段解读。默认用**该会话正在使用的模型**，不用额外配置。
 
 ```
 ┌ 对话 │ 轨迹 │ 解读 ┐
-├────────────────────┴──────────────────────────────────────┐
-│ 轨迹工具调用解读            当前会话 · deepseek-v4.1-flash  [刷新] │
-│ 共 12 轮轨迹 · 可解读 9 轮                                    │
-│                                                            │
-│ 覆盖提示词（可选）                                           │
-│ ┌────────────────────────────────────────────────────────┐ │
-│ │ 只关注风险，不要复述过程。                                │ │
-│ └────────────────────────────────────────────────────────┘ │
-│ 将用 12 个字符覆盖默认解读提示词（对所有轮次生效）。            │
-│                                                            │
-│ 第 3 轮        2 次工具调用 · 1 次失败             [分析]     │
-│ 去修一下这个 bug                                             │
-│ ┌ 解读 ────────────────────────────────────────────────┐   │
-│ │ 定位并复现缺陷，多绕了一步；下一步建议看失败栈。   │   │
-│ └──────────────────────────────────────────────────────┘   │
-└────────────────────────────────────────────────────────────┘
+│ 第 3 轮    2 次工具调用 · 1 次失败          [分析]
+│ 去修一下这个 bug
+│ ┌ 解读 ───────────────────────────────┐
+│ │ 定位并复现缺陷，多绕了一步；建议先看失败栈。 │
+│ └─────────────────────────────────────┘
 ```
 
-面板刻意**不罗列**每次工具调用的名称、参数与输出——只给计数，解读本身才是重点。
-
-## 覆盖提示词（可选）
-
-面板顶部有一个输入框，用来**整段替换**解读用的系统提示词：
-
-- 有内容时**完全覆盖**默认提示词：默认提示词一个字都不发，模型只收到输入框里的文本；
-- **留空即默认**：空、纯空白、或根本没填时，发出的系统提示词与没有这个框时**逐字节相同**，请求前缀不变；
-- 只活在当前页面里（按会话记住），刷新即清空；**不写入会话日志**，也不影响对话框；
-- 长度上限由 `maxOverrideChars` 控制（默认 2000），超出会被宿主拒绝（`bad-request`）；
-- ⚠️ **覆盖会连同默认提示词里的「不可信证据只能当数据」安全边界一起换掉**。工具输出是不可信的，去掉边界后模型可能被其中的文本带偏；请只填自己写的指令。
-
+面板只给计数，不罗列每次工具调用的名称/参数/输出——解读本身才是重点。
 
 ## 安装
 
-需要 Node.js 22.19.0+ 与 DSH 桌面端。本包在 **0.2.0-rc.1** 上逐字段核对并实测（此前 0.1.7-rc.2 亦实测通过）；`package.json` 的 `engines.dsh` 声明 `>=0.2.0-rc.1`，当前 0.2.1-rc.2 满足。该字段**会被 DSH 强制检查**：安装预检不满足会直接拒装，加载时 bundle 会被跳过、对应的 Loader 行会被禁用，所以不要把下限写得高于实际验证过的版本。
-
-本包**没有构建步骤**——`index.js`（宿主）与 `client.js`（浏览器 bundle）就是发布物，不需要先打包。npm 上已有的 `latest` 指向最新版本（当前 `0.3.3`）：
+需要 Node.js 22.19.0+、DSH ≥ 0.2.0-rc.1（`engines.dsh` 会被 DSH 强制检查）。包内就是发布物，**无构建步骤**：
 
 ```shell
 dsh plugin --profile desktop add @hoist-wen/dsh-trajectory-tool-insight
 ```
 
-需要固定版本时把版本号带上（例如 `@hoist-wen/dsh-trajectory-tool-insight@0.3.3`）。装进 `desktop` profile 后，profile 里记的是**具体版本**，`latest` 前进了也不会自动升级；要更新就重新 `add` 一次（或先 `remove` 再 `add`）。npm 安装取的是发布快照，本包没有 `prepare` / `postinstall` 脚本，所以不会被 pnpm 的依赖脚本审批（`allowBuilds`）拦住。
-
-重启 DSH 桌面端（或等 profile 热重载后刷新页面），打开任意非空会话即可看到「解读」标签。
+profile 里记的是**具体版本**，`latest` 前进不会自动升级，要更新就重新 `add`（或先 `remove`）。需要固定版本可写 `@0.3.3`。
 
 卸载：
 
@@ -58,152 +31,66 @@ dsh plugin --profile desktop add @hoist-wen/dsh-trajectory-tool-insight
 dsh plugin --profile desktop remove @hoist-wen/dsh-trajectory-tool-insight
 ```
 
-## 它做了什么
+装好后重启 DSH 桌面端（或等 profile 热重载），打开任意非空会话即可看到「解读」标签。
 
-只有两条端点，都是共享 `/api` 通道上的**精确 Fetch 路由**，经浏览器鉴权后才到达：
+## 用法
 
-| 路由 | 请求 | 响应 |
-|---|---|---|
-| `POST /api/trajectory-tool-insight.turns` | `{ sessionId }` | `{ ok, value: { sessionId, totalTurns, turns[], route } }` |
-| `POST /api/trajectory-tool-insight.analyze` | `{ sessionId, turn, override? }` | `{ ok, value: { sessionId, turn, route, overrideApplied, text, usage, finish, truncated } }` |
+1. 打开一个有工具调用的会话 → 「解读」标签
+2. 顶部显示当前会话模型与可解读轮次数，点某一轮的「分析」
+3. 结果就地展开；不落盘，刷新即失效
 
-`override` 就是面板上的「覆盖提示词」；省略或空白表示使用默认提示词，此时 `overrideApplied` 为 `false`。
-
-业务失败仍返回 HTTP 200 + `{ ok: false, error: { code, message, details } }`，面板据此给出可读提示；只有传输层（未鉴权 401 / 跨域 403）才是非 2xx。
-
-数据流很短：
-
-1. `ctx.sessionQuery.observeSession(sessionId, { signal })` **一次读取**同时拿到该会话的精确事件切面与投影基线；
-2. `src/turns.mjs` 把事件折叠成「轮次 → 用户请求 + 工具调用（名称 / 参数 / 结果 / 是否失败）」，**不保留助手文本**；
-3. `src/route.mjs` 解析这一轮该用哪个模型；
-4. `src/prompt.mjs` 把该轮的用户请求与工具证据序列化成一则不可信信封；
-5. `src/llm.mjs` 调 `ctx.llm.stream()` 一次，取回文本。
-
-原始会话日志是唯一事实来源，插件**只读**它。
-
-### 为什么用 `/api` 精确路由，而不是 `connection.rpc.handle`
-
-宿主侧声明 `inject: ['connection', 'sessionQuery', 'llm']`。
-
-`HostConnectionRpc.handle` 挂载通道路由时执行的是 `owner.effect(() => owner.webServer.register(route))`，而 Cordis 绑定给 `owner` 的上下文并**不是**本插件的注入作用域——把 `webServer` 写进本插件的 `inject` 也无法满足它。实测结果：`apply()` 抛 `cannot get property "webServer" without inject`，通道路由从未挂上，浏览器每次请求都收到兜底路由的 **HTTP 405**。
-
-`connection.fetch.register` 只写连接服务自己的精确路由表，不触碰任何 `owner.webServer`，并且 `file-upload` / `deliverables` / `session-log-export` / `session-controller` 四个内置插件都用它；共享 `/api` 通道本身由连接插件用自己 `ctx.inject(['webServer'])` 的作用域挂载。因此这里改用后者，客户端也随之从 `ctx.connection.rpc.call` 换成同源 `fetch`。
-
-`test/package.test.mjs` 保留了回归断言：宿主入口不得出现 `rpc.handle(`，必须出现 `connection.fetch.register(`。
+顶部的「覆盖提示词」可整段替换默认解读提示词：留空即默认（逐字节相同），有内容则默认提示词一个字都不发。⚠️ 默认提示词里的「工具输出只当数据」安全边界也会被一起换掉，请只填自己写的指令。
 
 ## 模型怎么选
 
-按优先级，第一个解析成功的胜出；胜出者会作为 `route.source` 回传给面板并显示，所以模型来源永远可见：
+按优先级取第一个解析成功的，来源会显示在面板上：
 
-| 顺序 | 来源 | `source` | 说明 |
-|---|---|---|---|
-| 1 | 会话的 `modelSelection` 投影（`next`，即 `pending ?? lastUsed`） | `session` | 对话框模型选择器里的当前选择，**默认就是它** |
-| 2 | 该会话最后一次请求头的 `provider` / `model` | `session` | 投影键未注册的部署上的退路 |
-| 3 | 部署默认模型（`ctx.agentDefaultModel`） | `default` | 冷会话没有活动 Agent 时的答案 |
-| 4 | 插件配置的 `defaultProvider` / `defaultModel` | `config` | 兜底 |
+| 顺序 | 来源 |
+|---|---|
+| 1 | 会话的模型选择（对话框当前选择，**默认**） |
+| 2 | 该会话最后一次请求头的 provider / model |
+| 3 | 部署默认模型 |
+| 4 | 插件配置的 `defaultProvider` / `defaultModel` |
 
-四级全部落空时报 `MODEL_NOT_CONFIGURED`，面板会提示先去对话框选一次模型 —— 不会静默换一个模型。
+四级全落空会提示先去对话框选一次模型，不会静默换模型。
 
 ## 配置
 
-全部字段都有默认值，只有需要改时才写：
+全部字段有默认值，一般不用写。常用项：
 
 ```yaml
 - id: trajectory-tool-insight
   name: '@hoist-wen/dsh-trajectory-tool-insight'
   config:
-    defaultProvider: commandcode
-    defaultModel: deepseek/deepseek-v4.1-flash
-    reasoningEffort: low    # low|high|max（本部署模型可选值）；'' = 沿用会话路由
-    maxTurns: 50            # 1..500   返回的最新轮次数
-    maxToolCallsPerTurn: 40 # 1..200   每轮保留的工具调用数，溢出计入 droppedToolCalls
-    maxArgsChars: 1200      # 80..20000
-    maxResultChars: 1600    # 80..40000
-    maxPromptChars: 400     # 80..4000
-    maxOutputTokens: 1500   # 64..32000
-    timeoutMs: 120000       # 1000..900000
-    maxOverrideChars: 2000  # 0..20000  面板「覆盖提示词」的长度上限
+    maxTurns: 50              # 返回的最新轮次数
+    maxOutputTokens: 1500     # 推理 + 正文的合计上限
+    reasoningEffort: low      # low|high|max；'' = 沿用会话
+    timeoutMs: 120000
 ```
 
-未知键、类型错误、越界值都会在插件加载时**显式抛错**，不会静默退回默认值。
+未知键、类型错误、越界值在加载时直接报错，不会静默退回默认值。
 
-### `maxOutputTokens` 是什么：它是「推理 + 正文」的合计上限
+> `maxOutputTokens` 同时涵盖推理 token。`deepseek-v4.1-flash` 无条件思考，预算被推理吃光时会报 `MODEL_NO_OUTPUT`；把 `reasoningEffort` 设成 `''` 可沿用会话强度，设成 `'off'` **不是**关闭思考。
 
-`maxOutputTokens` 是**一次生成的总 token 上限**，同时覆盖推理（思考）token 与可见正文——它**不是**“正文长度”。
+## 限制
 
-- DSH 的请求里只有两个相关字段：`maxTokens` 与 `reasoningEffort`。**没有任何字段可以把推理排除在 `maxTokens` 之外**，也没有独立的“思考预算”。
-- 本部署的 `command-code` provider 同样只转发这两个（`max_tokens` + `reasoning_effort`），并把推理 token 计入 `outputTokens` 上报。
-- `deepseek/deepseek-v4.1-flash` **无条件思考**，可选强度只有 `low | high | max`，**没有 `off`**。
-
-所以「预算固定 1500、但思考不占额度」在当前 provider + 模型上**做不到**。要在这个预算里拿到正文，唯一杠杆是把思考强度压到 `low`——这就是默认取值 `maxOutputTokens: 1500` + `reasoningEffort: low` 的由来。
-
-> ⚠️ 别用 `reasoningEffort: 'off'` 来“关闭思考”：在本 provider 里它的含义是**不发送 `reasoning_effort` 参数**，即回到 Command Code 自己的默认深度，很可能比 `low` 想得更多。
-
-实测失败形态：`finish_reason=length, max_tokens=1500, outputTokens=1500, reasoningTokens=1500`——1500 全被推理吃光、正文零字。provider 会直接抛错；本插件在能拿到 `finish=max-tokens` 的情况下报专属错误码 `MODEL_NO_OUTPUT`，并附带同样的解释，而不是笼统的“模型没有返回文本”。
-
-若 `low` + 1500 仍不够，只有两条路：调大 `maxOutputTokens`，或改用一个可选强度更低的模型。把 `reasoningEffort` 设为 `''` 则回到沿用会话路由的思考强度。
-
-## 模型影响
-
-### 请求面与触发条件
-
-一次 `turn/analyze` 触发**一次独立的模型请求**：`system` 默认为固定的解读器提示词（刻意写短——过长的指令会诱发更多推理 token，而推理与正文共享同一份输出预算），要求用**一段连贯中文**（不分点、不加小标题）同时交代「这一轮在做什么 / 判断 / 下一步」，`user` 为一则 `TURN_EVIDENCE_JSON_LENGTH=<n>` 长度标记 + 该轮证据的 JSON——证据只含**该轮用户请求**与**工具调用（名称 / 参数 / 结果 / 失败）**，刻意不含助手自己的文本，避免模型拿自己的叙述为工具执行做自我合理化。证据里的参数与工具输出是不可信的历史数据，默认提示词固定了「只当数据」的边界；**若填了「覆盖提示词」，系统提示词整段换成输入框内容，这段边界也随之消失。**
-
-- 请求携带 `source: { kind: 'plugin', plugin: '@hoist-wen/dsh-trajectory-tool-insight' }` 作为归因；
-- **不传 `sessionId`、不追加任何会话事件**，所以解读请求不进入会话日志，也不会进入对话历史或 KV 缓存前缀。
-
-### Token 影响
-
-按需发生：只有点击「分析」才产生请求。输入被 `maxArgsChars` / `maxResultChars` 截断，输出被 `maxOutputTokens` 限制（推理 token 也计入）。
-
-- `max-tokens` 结束但**有**正文：仍返回部分文本，面板标注「输出被 maxTokens 截断」；
-- `max-tokens` 结束且**没有**正文（推理吃光预算）：报 `MODEL_NO_OUTPUT`，面板给出「调大 maxOutputTokens 或调低 reasoningEffort」的可操作提示。
-
-### KV 缓存影响
-
-解读请求是**独立请求**：它与对话本身不共享前缀（system 与 message 都不同），因此既不失效也不复用对话的缓存；反之，解读结果也不会写回对话，不影响对话侧缓存前缀的稳定性。
-
-插件自身的连续解读调用之间，默认提示词前缀是稳定的；一旦在覆盖提示词框里输入内容，system 就整段变了，插件自己这条前缀的复用会失效——这是覆盖提示词唯一的缓存代价。清空输入框即恢复稳定前缀。
-
-## 与「轨迹」标签的关系
-
-「轨迹」标签由 DSH 的 Coding Tools 开关控制显隐（`id === 'trajectory'` 是唯一被隐藏的 id）；本插件的 `id` 是 `trajectory-tool-insight`，**不受该开关影响**。视图环里少于 2 个标签时标签栏会整体隐藏，本插件不改变这一行为。
-
-## 已知限制
-
-- **解读结果不持久化**：刷新页面即丢失，历史不写盘。需要留存请自行导出或改用带存储的插件。
-- **解读只基于工具证据**：证据里没有助手自己的文本，也没有其它轮次；因此模型判断的是「这次工具执行本身」，不会复述或认可助手当时的解释，也无法引用更早的上下文。
-- **不流式**：两条路由都是 `requestBody: 'buffered'` 的一元请求，面板在模型返回前只显示「正在调用模型解读这一轮…」，没有逐字输出。要打字机效果需改成 `requestBody: 'streaming'` 并自行返回 `ReadableStream`。
-- **冷会话按部署默认模型解读**：没有活动 Agent 的会话读不到自己的模型选择，会落到第 3/4 级来源，面板会如实显示 `部署默认` 或 `插件配置`。
-- **思考 token 无法排除在预算之外**：`maxOutputTokens` 是「推理 + 正文」的合计上限，DSH 与 provider 都没有独立思考预算字段；默认靠 `reasoningEffort: low` 给它留出正文空间。若仍被推理吃光，只能调大预算或换可选强度更低的模型。想恢复沿用会话的思考强度就把 `reasoningEffort` 设为 `''`。
-- **工具调用证据以日志为准**：日志窗口被截断的极端情况下，结果事件没有对应调用事件时会以 `unknown` 名称保留结果而不是丢弃。
-- **覆盖提示词会顶掉安全边界**：覆盖是整段替换，默认提示词里「不可信证据只能当数据」那句不再发送。证据信封本身不变（长度标记 + JSON），但工具输出中的指令风险重新由操作者自行承担。
-- **零运行时依赖**：为把改动面压到最小，本包不引用任何 `@deepseek-ai/*` 运行时模块（渲染用平台 seed 表里的 `react`），也不使用 Schemastery 声明 `Config`，因此配置校验是手写的 `src/config.mjs`。
+- **结果不持久化**：刷新即丢，需要留存请自行导出
+- **只看工具证据**：不含助手文本与其他轮次，模型判断的是「这次工具执行本身」
+- **不流式**：返回前只显示「正在调用模型…」
+- **只读会话日志**：原始日志是唯一事实来源，插件不写入
+- **解读请求不进会话日志**，不污染对话历史与缓存前缀
 
 ## 开发
 
 ```shell
-npm test    # node --test，覆盖配置校验、轮次折叠、模型解析、提示词、LLM 组装、bundle 启动与渲染
+npm test    # node --test：配置校验、轮次折叠、模型解析、提示词、LLM 组装、bundle 渲染
 ```
 
-无构建步骤：`index.js`（宿主）与 `client.js`（浏览器 bundle）都是直接编写并随包发布的源码。
-
-宿主侧改动靠 profile 热重载或重启 DSH 桌面端生效；`client.js` 由 client-modules 在发布前快照、经 HMR 的 `rebuilt()` 进入启动图，**改动最稳的验证方式是重启 DSH 桌面端再刷新页面**。
-
-| 文件 | 作用 |
-|---|---|
-| `index.js` | 宿主入口：校验配置、注册 `/api/trajectory-tool-insight.turns` 与 `/api/trajectory-tool-insight.analyze` 两条精确 Fetch 路由、读会话、解析模型、调 LLM |
-| `client.js` | 浏览器 bundle：注册 `conversation.view` 的「解读」标签与面板 |
-| `src/config.mjs` | 配置校验与投影上限 |
-| `src/turns.mjs` | 会话事件 → 轮次 / 工具调用（纯函数） |
-| `src/route.mjs` | 模型来源解析链（纯函数） |
-| `src/prompt.mjs` | 系统提示词与证据信封（纯函数） |
-| `src/llm.mjs` | 一次 `ctx.llm.stream()` 的组装与失败归一 |
-| `cordis.patch.yml` | bundle 补丁：把本包插成一行 Loader entry |
+源码即产物：`index.js`（宿主 + 两条 `/api` 路由）、`client.js`（浏览器 bundle）、`src/*.mjs`（纯函数）。宿主改动靠 profile 热重载或重启生效，`client.js` 改动最稳的验证方式是重启桌面端再刷新页面。
 
 ## 致谢
 
-- **来源项目**：本插件由 [dsh-trace-insight](https://github.com/Liu-Bot24/dsh-trace-insight) 精简重写而来（MIT，Copyright © 2026 DSH Trace Insight contributors）。最初沿用的包名 `dsh-plugin-turn-insight` 与「轨迹解读」定位均源自该项目；现更名为 `@hoist-wen/dsh-trajectory-tool-insight`，原名称在此记录。
+本插件由 [dsh-trace-insight](https://github.com/Liu-Bot24/dsh-trace-insight)（MIT）精简重写而来，包名与「轨迹解读」定位均源自该项目。
 
 ## 许可证
 
