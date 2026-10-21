@@ -256,7 +256,6 @@ test('the view renders per-turn tool calls and the returned interpretation', () 
     turns: [{
       turn: 3,
       prompt: '去修一下这个 bug',
-      assistant: '先复现。',
       droppedToolCalls: 0,
       toolCalls: [
         { callId: 'c1', name: 'read', args: '{"file_path":"a.ts"}', result: 'ok', isError: false },

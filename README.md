@@ -78,9 +78,9 @@ dsh plugin --profile desktop remove @hoist-wen/dsh-trajectory-tool-insight
 数据流很短：
 
 1. `ctx.sessionQuery.observeSession(sessionId, { signal })` **一次读取**同时拿到该会话的精确事件切面与投影基线；
-2. `src/turns.mjs` 把事件折叠成「轮次 → 工具调用（名称 / 参数 / 结果 / 是否失败）」；
+2. `src/turns.mjs` 把事件折叠成「轮次 → 用户请求 + 工具调用（名称 / 参数 / 结果 / 是否失败）」，**不保留助手文本**；
 3. `src/route.mjs` 解析这一轮该用哪个模型；
-4. `src/prompt.mjs` 把该轮证据序列化成一则不可信信封；
+4. `src/prompt.mjs` 把该轮的用户请求与工具证据序列化成一则不可信信封；
 5. `src/llm.mjs` 调 `ctx.llm.stream()` 一次，取回文本。
 
 原始会话日志是唯一事实来源，插件**只读**它。
@@ -124,7 +124,6 @@ dsh plugin --profile desktop remove @hoist-wen/dsh-trajectory-tool-insight
     maxArgsChars: 1200      # 80..20000
     maxResultChars: 1600    # 80..40000
     maxPromptChars: 400     # 80..4000
-    maxAssistantChars: 600  # 80..8000
     maxOutputTokens: 1500   # 64..32000
     timeoutMs: 120000       # 1000..900000
     maxOverrideChars: 2000  # 0..20000  面板「覆盖提示词」的长度上限
@@ -152,7 +151,7 @@ dsh plugin --profile desktop remove @hoist-wen/dsh-trajectory-tool-insight
 
 ### 请求面与触发条件
 
-一次 `turn/analyze` 触发**一次独立的模型请求**：`system` 默认为固定的解读器提示词（刻意写短——过长的指令会诱发更多推理 token，而推理与正文共享同一份输出预算），要求用**一段连贯中文**（不分点、不加小标题）同时交代「这一轮在做什么 / 判断 / 下一步」，`user` 为一则 `TURN_EVIDENCE_JSON_LENGTH=<n>` 长度标记 + 该轮工具调用证据的 JSON。证据里的参数与工具输出是不可信的历史数据，默认提示词固定了「只当数据」的边界；**若填了「覆盖提示词」，系统提示词整段换成输入框内容，这段边界也随之消失。**
+一次 `turn/analyze` 触发**一次独立的模型请求**：`system` 默认为固定的解读器提示词（刻意写短——过长的指令会诱发更多推理 token，而推理与正文共享同一份输出预算），要求用**一段连贯中文**（不分点、不加小标题）同时交代「这一轮在做什么 / 判断 / 下一步」，`user` 为一则 `TURN_EVIDENCE_JSON_LENGTH=<n>` 长度标记 + 该轮证据的 JSON——证据只含**该轮用户请求**与**工具调用（名称 / 参数 / 结果 / 失败）**，刻意不含助手自己的文本，避免模型拿自己的叙述为工具执行做自我合理化。证据里的参数与工具输出是不可信的历史数据，默认提示词固定了「只当数据」的边界；**若填了「覆盖提示词」，系统提示词整段换成输入框内容，这段边界也随之消失。**
 
 - 请求携带 `source: { kind: 'plugin', plugin: '@hoist-wen/dsh-trajectory-tool-insight' }` 作为归因；
 - **不传 `sessionId`、不追加任何会话事件**，所以解读请求不进入会话日志，也不会进入对话历史或 KV 缓存前缀。
@@ -177,6 +176,7 @@ dsh plugin --profile desktop remove @hoist-wen/dsh-trajectory-tool-insight
 ## 已知限制
 
 - **解读结果不持久化**：刷新页面即丢失，历史不写盘。需要留存请自行导出或改用带存储的插件。
+- **解读只基于工具证据**：证据里没有助手自己的文本，也没有其它轮次；因此模型判断的是「这次工具执行本身」，不会复述或认可助手当时的解释，也无法引用更早的上下文。
 - **不流式**：两条路由都是 `requestBody: 'buffered'` 的一元请求，面板在模型返回前只显示「正在调用模型解读这一轮…」，没有逐字输出。要打字机效果需改成 `requestBody: 'streaming'` 并自行返回 `ReadableStream`。
 - **冷会话按部署默认模型解读**：没有活动 Agent 的会话读不到自己的模型选择，会落到第 3/4 级来源，面板会如实显示 `部署默认` 或 `插件配置`。
 - **思考 token 无法排除在预算之外**：`maxOutputTokens` 是「推理 + 正文」的合计上限，DSH 与 provider 都没有独立思考预算字段；默认靠 `reasoningEffort: low` 给它留出正文空间。若仍被推理吃光，只能调大预算或换可选强度更低的模型。想恢复沿用会话的思考强度就把 `reasoningEffort` 设为 `''`。

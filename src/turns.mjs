@@ -26,7 +26,6 @@
  * @property {number} maxArgsChars
  * @property {number} maxResultChars
  * @property {number} promptChars
- * @property {number} assistantChars
  */
 
 function asArray(value) {
@@ -75,7 +74,6 @@ function ensureTurn(turns, turn, event) {
     seq: Number.isSafeInteger(event?.seq) ? event.seq : null,
     time: Number.isSafeInteger(event?.time) ? event.time : null,
     prompt: '',
-    assistant: '',
     calls: [],
     byCallId: new Map(),
     dropped: 0,
@@ -117,14 +115,13 @@ function recordCall(entry, raw, limits, canonical) {
   if (callId) entry.byCallId.set(callId, call)
 }
 
-function appendAssistantText(entry, content, limits) {
-  const text = blocksToText(asArray(content).filter(block => asObject(block).type === 'text'), limits.assistantChars)
-  if (!text) return
-  entry.assistant = clip(entry.assistant ? `${entry.assistant}\n${text}` : text, limits.assistantChars)
-}
-
 /**
  * Project a session event log into the newest turns that carried tool calls.
+ *
+ * Assistant text is deliberately **not** projected: this surface interprets
+ * tool execution, and the model's own narration is both self-serving evidence
+ * and redundant with the calls it describes. Only the tool-call blocks of an
+ * assistant message matter here.
  *
  * @param events - raw session events in ascending seq order.
  * @param limits - caps to apply while projecting.
@@ -166,7 +163,6 @@ export function collectTurns(events, limits) {
       if (turn === null) continue
       const entry = ensureTurn(turns, turn, event)
       const content = asArray(asObject(data.message).content)
-      appendAssistantText(entry, content, limits)
       for (const block of content) {
         const call = asObject(block)
         if (call.type !== 'tool-call') continue
@@ -232,7 +228,6 @@ export function collectTurns(events, limits) {
       time: entry.time,
       closed: entry.closed,
       prompt: entry.prompt,
-      assistant: entry.assistant,
       droppedToolCalls: entry.dropped,
       toolCalls: entry.calls.map(call => ({
         callId: call.callId,

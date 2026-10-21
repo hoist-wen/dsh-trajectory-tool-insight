@@ -50,8 +50,10 @@ export function buildSystemPrompt(override = '') {
 /**
  * Build the model input for one turn.
  *
- * The evidence keeps every tool call's arguments and result: the model needs
- * them to judge the turn even though the panel no longer lists them.
+ * The evidence keeps the turn's own user request plus every tool call's
+ * arguments and result. Assistant prose is deliberately absent: this surface
+ * interprets tool execution, and letting the model read its own narration
+ * invites self-justification.
  *
  * @param turn - one entry from {@link import('./turns.mjs').collectTurns}.
  * @returns the serialized evidence envelope sent as the single user message.
@@ -60,7 +62,6 @@ export function buildAnalysisPrompt(turn) {
   const evidence = {
     turn: turn.turn,
     userRequest: turn.prompt || null,
-    assistantNotes: turn.assistant || null,
     truncatedToolCalls: turn.droppedToolCalls > 0 ? turn.droppedToolCalls : null,
     toolCalls: turn.toolCalls.map(call => ({
       name: call.name,

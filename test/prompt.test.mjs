@@ -23,20 +23,21 @@ test('the evidence envelope is length-marked JSON behind the untrusted boundary'
   assert.deepEqual(JSON.parse(json), {
     turn: 3,
     userRequest: '跑一下测试',
-    assistantNotes: '先看配置。',
     truncatedToolCalls: null,
     toolCalls: [
       { name: 'read', failed: false, arguments: '{"file_path":"a.ts"}', result: 'export const a = 1' },
       { name: 'grep', failed: true, arguments: '{"pattern":"TODO"}', result: 'no such directory' },
     ],
   })
+  // The assistant's own narration is not evidence for interpreting its tools.
+  assert.ok(!('assistantNotes' in JSON.parse(json)))
 })
 
-test('an empty prompt and notes serialize as null rather than empty strings', () => {
-  const parsed = JSON.parse(buildAnalysisPrompt({ turn: 1, prompt: '', assistant: '', droppedToolCalls: 0, toolCalls: [] }).split('\n').slice(1).join('\n'))
+test('an empty prompt serializes as null rather than an empty string', () => {
+  const parsed = JSON.parse(buildAnalysisPrompt({ turn: 1, prompt: '', droppedToolCalls: 0, toolCalls: [] }).split('\n').slice(1).join('\n'))
   assert.equal(parsed.userRequest, null)
-  assert.equal(parsed.assistantNotes, null)
   assert.deepEqual(parsed.toolCalls, [])
+  assert.deepEqual(Object.keys(parsed), ['turn', 'userRequest', 'truncatedToolCalls', 'toolCalls'])
 })
 
 test('dropped tool calls are surfaced to the model', () => {

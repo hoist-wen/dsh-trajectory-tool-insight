@@ -50,14 +50,13 @@ test('wrong types fail explicitly', () => {
 })
 
 test('turnLimits maps the configuration onto the projection caps', () => {
-  const limits = turnLimits(normalizeConfig({ maxTurns: 3, maxPromptChars: 100, maxAssistantChars: 200 }))
+  const limits = turnLimits(normalizeConfig({ maxTurns: 3, maxPromptChars: 100 }))
   assert.deepEqual(limits, {
     maxTurns: 3,
     maxToolCallsPerTurn: CONFIG_DEFAULTS.maxToolCallsPerTurn,
     maxArgsChars: CONFIG_DEFAULTS.maxArgsChars,
     maxResultChars: CONFIG_DEFAULTS.maxResultChars,
     promptChars: 100,
-    assistantChars: 200,
   })
 })
 

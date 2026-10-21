@@ -40,9 +40,8 @@ export const CONFIG_DEFAULTS = Object.freeze({
   /** Character caps applied to the evidence handed to the model. */
   maxArgsChars: 1_200,
   maxResultChars: 1_600,
-  /** Character caps applied to a turn's own prompt and assistant notes. */
+  /** Character cap applied to a turn's own prompt (panel excerpt and evidence). */
   maxPromptChars: 400,
-  maxAssistantChars: 600,
   /**
    * Output cap and wall-clock cap for one interpretation call.
    *
@@ -69,7 +68,6 @@ const NUMBER_BOUNDS = Object.freeze({
   maxArgsChars: [80, 20_000],
   maxResultChars: [80, 40_000],
   maxPromptChars: [80, 4_000],
-  maxAssistantChars: [80, 8_000],
   maxOutputTokens: [64, 32_000],
   timeoutMs: [1_000, 900_000],
   maxOverrideChars: [0, 20_000],
@@ -136,7 +134,6 @@ export function turnLimits(config) {
     maxArgsChars: config.maxArgsChars,
     maxResultChars: config.maxResultChars,
     promptChars: config.maxPromptChars,
-    assistantChars: config.maxAssistantChars,
   }
 }
 

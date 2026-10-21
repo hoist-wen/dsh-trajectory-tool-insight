@@ -9,7 +9,6 @@ const LIMITS = Object.freeze({
   maxArgsChars: 1_200,
   maxResultChars: 1_600,
   promptChars: 400,
-  assistantChars: 600,
 })
 
 function event(seq, type, data) {
@@ -60,7 +59,8 @@ test('groups tool calls by turn and pairs each call with its result', () => {
 
   const [first, second] = turns
   assert.equal(first.prompt, '看看这个文件的实现')
-  assert.equal(first.assistant, '我先读文件。')
+  // Assistant prose is dropped: only tool evidence is projected.
+  assert.ok(!('assistant' in first))
   assert.equal(first.closed, true)
   assert.deepEqual(first.toolCalls, [{
     callId: 'c1',
