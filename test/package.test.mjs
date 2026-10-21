@@ -74,7 +74,7 @@ test('the bundle id is the package name, as the module loader requires', () => {
 
 test('the bundle patch inserts this package as a loader row', () => {
   assert.match(patchSource, /- insert:/u)
-  assert.ok(patchSource.includes(`name: ${manifest.name}`), 'the inserted row names this package')
+  assert.ok(patchSource.includes(`name: '${manifest.name}'`), 'the inserted row names this package')
   assert.match(patchSource, /- id: trajectory-tool-insight/u)
 })
 

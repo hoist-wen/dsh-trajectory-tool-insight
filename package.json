@@ -1,6 +1,9 @@
 {
-  "name": "dsh-plugin-trajectory-tool-insight",
+  "name": "@hoist-wen/trajectory-tool-insight",
   "version": "0.1.5",
+  "publishConfig": {
+    "access": "public"
+  },
   "description": "在「轨迹」旁新增「解读」标签页：对每一轮轨迹的工具调用一键解读，默认沿用当前会话正在使用的模型。",
   "type": "module",
   "main": "./index.js",

@@ -19,7 +19,7 @@ import { randomUUID } from 'node:crypto'
 import { ToolInsightError } from './errors.mjs'
 
 /** Attribution recorded on the auxiliary request. */
-const PLUGIN_ID = 'dsh-plugin-trajectory-tool-insight'
+const PLUGIN_ID = '@hoist-wen/trajectory-tool-insight'
 
 function createDeadline(parent, timeoutMs) {
   const controller = new AbortController()

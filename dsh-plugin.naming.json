@@ -2,10 +2,10 @@
   "schemaVersion": 1,
   "policy": "dsh-plugin-naming/v1",
   "plugin": {
-    "namespace": "quill507",
+    "namespace": "hoist-wen",
     "name": "trajectory-tool-insight",
-    "coordinate": "quill507/trajectory-tool-insight",
-    "packageName": "dsh-plugin-trajectory-tool-insight"
+    "coordinate": "hoist-wen/trajectory-tool-insight",
+    "packageName": "@hoist-wen/trajectory-tool-insight"
   },
   "names": {
     "pluginNames": ["trajectory-tool-insight"],
