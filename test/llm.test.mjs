@@ -94,8 +94,8 @@ test('the request carries the resolved route, the system prompt, and an attribut
   const [message] = options.messages
   assert.equal(message.role, 'user')
   assert.equal(message.source.kind, 'plugin')
-  assert.equal(message.source.plugin, 'dsh-plugin-turn-insight')
-  assert.match(message.id, /^turn-insight-/u)
+  assert.equal(message.source.plugin, 'dsh-plugin-trajectory-tool-insight')
+  assert.match(message.id, /^trajectory-tool-insight-/u)
   assert.deepEqual(message.content, [{ type: 'text', text: CALL.user }])
 })
 
@@ -113,7 +113,7 @@ for (const [kind, code] of [['error', 'RATE_LIMIT'], ['error', 'AUTH'], ['aborte
       { type: 'finish', reason: { kind, failure: { code, message: `provider said ${code}` } } },
     ])
     await assert.rejects(runInterpretation(llm, CALL), error => {
-      assert.equal(error.name, 'TurnInsightError')
+      assert.equal(error.name, 'ToolInsightError')
       assert.equal(error.code, kind === 'aborted' ? 'MODEL_ABORTED' : code)
       assert.match(error.message, /provider said/u)
       assert.equal(error.details.usage, null)

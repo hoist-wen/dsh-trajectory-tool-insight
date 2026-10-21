@@ -75,12 +75,12 @@ test('the bundle id is the package name, as the module loader requires', () => {
 test('the bundle patch inserts this package as a loader row', () => {
   assert.match(patchSource, /- insert:/u)
   assert.ok(patchSource.includes(`name: ${manifest.name}`), 'the inserted row names this package')
-  assert.match(patchSource, /- id: turn-insight/u)
+  assert.match(patchSource, /- id: trajectory-tool-insight/u)
 })
 
 test('the host entry exports the Cordis plugin contract', async () => {
   const host = await import(new URL('index.js', root))
-  assert.equal(host.name, 'turn-insight')
+  assert.equal(host.name, 'trajectory-tool-insight')
   assert.equal(typeof host.apply, 'function')
   // `connection` carries the shared `/api` exact-route registry; the other two
   // are the required data sources. `agents` and `agentDefaultModel` are
@@ -125,8 +125,8 @@ test('a valid configuration registers exactly the two documented routes', async 
   host.apply(ctx, { maxTurns: 7, defaultProvider: 'p', defaultModel: 'm' })
 
   assert.deepEqual(routes.map(route => [route.path, route.methods, route.requestBody]), [
-    ['/api/turn-insight.turns', ['POST'], 'buffered'],
-    ['/api/turn-insight.analyze', ['POST'], 'buffered'],
+    ['/api/trajectory-tool-insight.turns', ['POST'], 'buffered'],
+    ['/api/trajectory-tool-insight.analyze', ['POST'], 'buffered'],
   ])
   for (const route of routes) assert.equal(typeof route.fetch, 'function')
 })
@@ -159,27 +159,27 @@ async function callRoute(host, path, body, extra = {}) {
 test('malformed requests answer structurally instead of throwing', async () => {
   const host = await import(new URL('index.js', root))
 
-  const missingBody = await callRoute(host, '/api/turn-insight.turns', undefined)
+  const missingBody = await callRoute(host, '/api/trajectory-tool-insight.turns', undefined)
   assert.equal(missingBody.ok, false)
   assert.equal(missingBody.error.code, 'bad-request')
   assert.match(missingBody.error.message, /JSON object/u)
 
-  const notAnObject = await callRoute(host, '/api/turn-insight.turns', 'nope')
+  const notAnObject = await callRoute(host, '/api/trajectory-tool-insight.turns', 'nope')
   assert.equal(notAnObject.ok, false)
   assert.equal(notAnObject.error.code, 'bad-request')
 
-  const noSession = await callRoute(host, '/api/turn-insight.turns', {})
+  const noSession = await callRoute(host, '/api/trajectory-tool-insight.turns', {})
   assert.equal(noSession.ok, false)
   assert.match(noSession.error.message, /sessionId/u)
 
-  const badTurn = await callRoute(host, '/api/turn-insight.analyze', { sessionId: 's' })
+  const badTurn = await callRoute(host, '/api/trajectory-tool-insight.analyze', { sessionId: 's' })
   assert.equal(badTurn.ok, false)
   assert.match(badTurn.error.message, /turn/u)
 })
 
 test('a failing session read becomes an internal failure, not an unhandled rejection', async () => {
   const host = await import(new URL('index.js', root))
-  const answer = await callRoute(host, '/api/turn-insight.turns', { sessionId: 's-1' }, {
+  const answer = await callRoute(host, '/api/trajectory-tool-insight.turns', { sessionId: 's-1' }, {
     sessionQuery: { observeSession: async () => { throw new Error('session is gone') } },
   })
   assert.equal(answer.ok, false)
@@ -219,7 +219,7 @@ test('an absent append sends the default system prompt unchanged', async () => {
   const host = await import(new URL('index.js', root))
   const { SYSTEM_PROMPT } = await import(new URL('src/prompt.mjs', root))
   const llm = recordingLlm()
-  const answer = await callRoute(host, '/api/turn-insight.analyze', { sessionId: 's', turn: 1 }, {
+  const answer = await callRoute(host, '/api/trajectory-tool-insight.analyze', { sessionId: 's', turn: 1 }, {
     sessionQuery: { observeSession: async () => observationWithOneTurn() },
     llm,
   })
@@ -235,7 +235,7 @@ test('an append is trimmed onto the system prompt and reported as applied', asyn
   const host = await import(new URL('index.js', root))
   const { SYSTEM_PROMPT } = await import(new URL('src/prompt.mjs', root))
   const llm = recordingLlm()
-  const answer = await callRoute(host, '/api/turn-insight.analyze', {
+  const answer = await callRoute(host, '/api/trajectory-tool-insight.analyze', {
     sessionId: 's',
     turn: 1,
     append: '  只看风险，不要复述过程。  ',
@@ -257,12 +257,12 @@ test('the append is validated at the boundary', async () => {
   const host = await import(new URL('index.js', root))
   const extra = { sessionQuery: { observeSession: async () => observationWithOneTurn() }, llm: recordingLlm() }
 
-  const wrongType = await callRoute(host, '/api/turn-insight.analyze', { sessionId: 's', turn: 1, append: 42 }, extra)
+  const wrongType = await callRoute(host, '/api/trajectory-tool-insight.analyze', { sessionId: 's', turn: 1, append: 42 }, extra)
   assert.equal(wrongType.ok, false)
   assert.equal(wrongType.error.code, 'bad-request')
   assert.match(wrongType.error.message, /append/u)
 
-  const tooLong = await callRoute(host, '/api/turn-insight.analyze', {
+  const tooLong = await callRoute(host, '/api/trajectory-tool-insight.analyze', {
     sessionId: 's',
     turn: 1,
     append: 'x'.repeat(2_001),
@@ -273,7 +273,7 @@ test('the append is validated at the boundary', async () => {
   assert.equal(tooLong.error.details.received, 2_001)
 
   // A whitespace-only append is "empty", so it must not be rejected as long.
-  const blank = await callRoute(host, '/api/turn-insight.analyze', { sessionId: 's', turn: 1, append: '   ' }, extra)
+  const blank = await callRoute(host, '/api/trajectory-tool-insight.analyze', { sessionId: 's', turn: 1, append: '   ' }, extra)
   assert.equal(blank.ok, true)
   assert.equal(blank.value.appendApplied, false)
 })
@@ -289,7 +289,7 @@ test('maxAppendChars is enforced from configuration, not hard-coded', async () =
     connection: { fetch: { register: route => { routes.push(route); return () => {} } } },
   }, { maxAppendChars: 5 })
 
-  const route = routes.find(candidate => candidate.path === '/api/turn-insight.analyze')
+  const route = routes.find(candidate => candidate.path === '/api/trajectory-tool-insight.analyze')
   const answer = await (await route.fetch(request({ sessionId: 's', turn: 1, append: '123456' }))).json()
   assert.equal(answer.ok, false)
   assert.equal(answer.error.details.maxAppendChars, 5)

@@ -1,4 +1,4 @@
-# 轨迹解读 Turn Insight
+# 轨迹工具调用解读 Trajectory Tool Insight
 
 给 DSH Web 的会话视图环加一个 **「解读」** 标签页，落在内置的「对话」「轨迹」旁边。
 页面按轮次列出**哪些轮次有工具调用**（只给次数与失败次数），每轮一个「分析」按钮，点击后由模型给出一段解读。
@@ -8,7 +8,7 @@
 ```
 ┌ 对话 │ 轨迹 │ 解读 ┐
 ├────────────────────┴──────────────────────────────────────┐
-│ 轨迹解读                    当前会话 · deepseek-v4.1-flash  [刷新] │
+│ 轨迹工具调用解读            当前会话 · deepseek-v4.1-flash  [刷新] │
 │ 共 12 轮轨迹 · 可解读 9 轮                                    │
 │                                                            │
 │ 附加提示词（可选）                                           │
@@ -46,23 +46,23 @@
 
 | 装法 | 命令 | profile 里记成 | 改了源码 |
 |---|---|---|---|
-| 源码目录（本机开发推荐） | `dsh plugin --profile web add "C:\Users\zhila\wen\code\test\dsh-turn-insight"` | `link:` + 指向该目录的链接 | 直接生效，不必重装 |
-| 本地 tarball（分发） | 先 `npm pack`，再 `dsh plugin --profile web add "…\dsh-plugin-turn-insight-0.1.5.tgz"` | `file:` 指向的 `.tgz` 快照 | 要重新 `npm pack` 并重装 |
-| git 远端 | `dsh plugin --profile web add github:hoist-wen/dsh-turn-insight` | 从 GitHub 取的一份拷贝 | 不生效，需重新安装 |
+| 源码目录（本机开发推荐） | `dsh plugin --profile web add "C:\Users\zhila\wen\code\test\dsh-trajectory-tool-insight"` | `link:` + 指向该目录的链接 | 直接生效，不必重装 |
+| 本地 tarball（分发） | 先 `npm pack`，再 `dsh plugin --profile web add "…\dsh-plugin-trajectory-tool-insight-0.1.5.tgz"` | `file:` 指向的 `.tgz` 快照 | 要重新 `npm pack` 并重装 |
+| git 远端 | `dsh plugin --profile web add github:hoist-wen/dsh-trajectory-tool-insight` | 从 GitHub 取的一份拷贝 | 不生效，需重新安装 |
 
-在源码目录的父目录里也可以写相对路径（`dsh plugin --profile web add ./dsh-turn-insight`），CLI 会先把它解析成绝对路径；但**Web 插件页与 `plugin_manager` 工具里必须填绝对路径**，相对路径会被拒绝（`a local path must be absolute`）。兼容性预检对目录形式直接读该目录的 `package.json`，不联网、不下载。
+在源码目录的父目录里也可以写相对路径（`dsh plugin --profile web add ./dsh-trajectory-tool-insight`），CLI 会先把它解析成绝对路径；但**Web 插件页与 `plugin_manager` 工具里必须填绝对路径**，相对路径会被拒绝（`a local path must be absolute`）。兼容性预检对目录形式直接读该目录的 `package.json`，不联网、不下载。
 
 重启 `dsh web`（或等 profile 热重载后刷新页面），打开任意非空会话即可看到「解读」标签。
 
 卸载（三种装法一样）：
 
 ```shell
-dsh plugin --profile web remove dsh-plugin-turn-insight
+dsh plugin --profile web remove dsh-plugin-trajectory-tool-insight
 ```
 
 > **各自要留住什么**
 >
-> - **源码目录**：链接指向源码树本身，**该目录不能移动或删除**，否则 profile 里的 `node_modules/dsh-plugin-turn-insight` 变成悬空链接。pnpm **不会**为 `link:` 依赖安装它自己的依赖；本包零运行时依赖，所以无影响（以后若引入依赖，需在仓库目录自行 `pnpm install`）。
+> - **源码目录**：链接指向源码树本身，**该目录不能移动或删除**，否则 profile 里的 `node_modules/dsh-plugin-trajectory-tool-insight` 变成悬空链接。pnpm **不会**为 `link:` 依赖安装它自己的依赖；本包零运行时依赖，所以无影响（以后若引入依赖，需在仓库目录自行 `pnpm install`）。
 > - **tarball**：记成 `file:` 依赖，**别删那个 `.tgz`**，否则无法重装——它是派生物，删了可用 `npm pack` 随时重新生成，因此不必入库（`.gitignore` 已忽略 `*.tgz`）。
 > - **git**：装的是远端拷贝。本包没有 `prepare` 脚本，所以不会被 pnpm 的依赖脚本审批（`allowBuilds`）拦住。
 
@@ -74,8 +74,8 @@ dsh plugin --profile web remove dsh-plugin-turn-insight
 
 | 路由 | 请求 | 响应 |
 |---|---|---|
-| `POST /api/turn-insight.turns` | `{ sessionId }` | `{ ok, value: { totalTurns, turns[], route } }` |
-| `POST /api/turn-insight.analyze` | `{ sessionId, turn }` | `{ ok, value: { text, route, usage, finish, truncated } }` |
+| `POST /api/trajectory-tool-insight.turns` | `{ sessionId }` | `{ ok, value: { totalTurns, turns[], route } }` |
+| `POST /api/trajectory-tool-insight.analyze` | `{ sessionId, turn }` | `{ ok, value: { text, route, usage, finish, truncated } }` |
 
 业务失败仍返回 HTTP 200 + `{ ok: false, error: { code, message, details } }`，面板据此给出可读提示；只有传输层（未鉴权 401 / 跨域 403）才是非 2xx。
 
@@ -117,8 +117,8 @@ dsh plugin --profile web remove dsh-plugin-turn-insight
 全部字段都有默认值，只有需要改时才写：
 
 ```yaml
-- id: turn-insight
-  name: dsh-plugin-turn-insight
+- id: trajectory-tool-insight
+  name: dsh-plugin-trajectory-tool-insight
   config:
     defaultProvider: commandcode
     defaultModel: deepseek/deepseek-v4.1-flash
@@ -158,7 +158,7 @@ dsh plugin --profile web remove dsh-plugin-turn-insight
 
 一次 `turn/analyze` 触发**一次独立的模型请求**：`system` 为固定的解读器提示词（刻意写短——过长的指令会诱发更多推理 token，而推理与正文共享同一份输出预算），要求用**一段连贯中文**（不分点、不加小标题）同时交代「这一轮在做什么 / 判断 / 下一步」，`user` 为一则 `TURN_EVIDENCE_JSON_LENGTH=<n>` 长度标记 + 该轮工具调用证据的 JSON。证据里的参数与工具输出是不可信的历史数据，系统提示词固定了「只当数据」的边界。
 
-- 请求携带 `source: { kind: 'plugin', plugin: 'dsh-plugin-turn-insight' }` 作为归因；
+- 请求携带 `source: { kind: 'plugin', plugin: 'dsh-plugin-trajectory-tool-insight' }` 作为归因；
 - **不传 `sessionId`、不追加任何会话事件**，所以解读请求不进入会话日志，也不会进入对话历史或 KV 缓存前缀。
 
 ### Token 影响
@@ -176,7 +176,7 @@ dsh plugin --profile web remove dsh-plugin-turn-insight
 
 ## 与「轨迹」标签的关系
 
-「轨迹」标签由 DSH 的 Coding Tools 开关控制显隐（`id === 'trajectory'` 是唯一被隐藏的 id）；本插件的 `id` 是 `turn-insight`，**不受该开关影响**。视图环里少于 2 个标签时标签栏会整体隐藏，本插件不改变这一行为。
+「轨迹」标签由 DSH 的 Coding Tools 开关控制显隐（`id === 'trajectory'` 是唯一被隐藏的 id）；本插件的 `id` 是 `trajectory-tool-insight`，**不受该开关影响**。视图环里少于 2 个标签时标签栏会整体隐藏，本插件不改变这一行为。
 
 ## 已知限制
 
@@ -199,7 +199,7 @@ npm test    # node --test，覆盖配置校验、轮次折叠、模型解析、�
 
 | 文件 | 作用 |
 |---|---|
-| `index.js` | 宿主入口：校验配置、注册 `/api/turn-insight.turns` 与 `/api/turn-insight.analyze` 两条精确 Fetch 路由、读会话、解析模型、调 LLM |
+| `index.js` | 宿主入口：校验配置、注册 `/api/trajectory-tool-insight.turns` 与 `/api/trajectory-tool-insight.analyze` 两条精确 Fetch 路由、读会话、解析模型、调 LLM |
 | `client.js` | 浏览器 bundle：注册 `conversation.view` 的「解读」标签与面板 |
 | `src/config.mjs` | 配置校验与投影上限 |
 | `src/turns.mjs` | 会话事件 → 轮次 / 工具调用（纯函数） |

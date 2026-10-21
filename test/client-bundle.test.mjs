@@ -8,7 +8,7 @@ import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import { test } from 'node:test'
 
-const PACKAGE_NAME = 'dsh-plugin-turn-insight'
+const PACKAGE_NAME = 'dsh-plugin-trajectory-tool-insight'
 const SOURCE = await readFile(new URL('../client.js', import.meta.url), 'utf8')
 
 function createReactStub(stateSeeds = []) {
@@ -143,7 +143,7 @@ test('the bundle registers under its own package name', () => {
 
 test('the materialized module exports the client plugin contract', () => {
   const { exports, requested } = loadBundle()
-  assert.equal(exports.name, 'turn-insight')
+  assert.equal(exports.name, 'trajectory-tool-insight')
   // The view ring is the only service dependency: requests are same-origin
   // `fetch` calls to `/api`, not client Connection RPC.
   assert.deepEqual(exports.inject, ['slots'])
@@ -155,12 +155,12 @@ test('apply claims exactly one conversation.view tab beside 轨迹', () => {
   const { state } = mount()
 
   assert.equal(state.injectKey, 'conversation.view')
-  assert.deepEqual(state.effects.map(effect => effect.label), ['turn-insight: styles'])
+  assert.deepEqual(state.effects.map(effect => effect.label), ['trajectory-tool-insight: styles'])
   assert.equal(typeof state.effects[0].disposer, 'function')
 
   const { options, component } = state.registration
   assert.equal(options.name, 'conversation.view')
-  assert.equal(options.id, 'turn-insight')
+  assert.equal(options.id, 'trajectory-tool-insight')
   assert.equal(options.order, 20)
   assert.equal(options.label(), '解读')
   assert.equal(typeof component, 'function')
@@ -177,8 +177,8 @@ test('the injected face is session-addressed and posts to the exact /api routes'
   await face.api.analyzeTurn(7, undefined)
 
   assert.deepEqual(calls.map(call => [call.method, call.url, call.body]), [
-    ['POST', '/api/turn-insight.turns', { sessionId: 'session-42' }],
-    ['POST', '/api/turn-insight.analyze', { sessionId: 'session-42', turn: 7 }],
+    ['POST', '/api/trajectory-tool-insight.turns', { sessionId: 'session-42' }],
+    ['POST', '/api/trajectory-tool-insight.analyze', { sessionId: 'session-42', turn: 7 }],
   ])
   assert.equal(calls[0].headers['content-type'], 'application/json')
 })
@@ -238,13 +238,13 @@ test('a 200 body that is not the expected envelope still surfaces a readable fai
   })
   const face = state.registration.options.inject('session-1')
 
-  await assert.rejects(face.api.listTurns(), /轨迹解读请求失败/u)
+  await assert.rejects(face.api.listTurns(), /轨迹工具调用解读请求失败/u)
 })
 
 test('the view renders its loading state without throwing', () => {
   const { state } = mount()
   const text = renderView(state, 'session-1')
-  assert.match(text, /轨迹解读/u)
+  assert.match(text, /轨迹工具调用解读/u)
   assert.match(text, /正在读取会话轨迹/u)
 })
 

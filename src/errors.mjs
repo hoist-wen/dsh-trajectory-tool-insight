@@ -5,7 +5,7 @@
  * the browser can distinguish "no model configured" from "the model failed"
  * without parsing an English message.
  */
-export class TurnInsightError extends Error {
+export class ToolInsightError extends Error {
   /**
    * @param code - stable machine-readable failure code.
    * @param message - human-readable explanation.
@@ -13,7 +13,7 @@ export class TurnInsightError extends Error {
    */
   constructor(code, message, details = {}) {
     super(message)
-    this.name = 'TurnInsightError'
+    this.name = 'ToolInsightError'
     this.code = code
     this.details = details
   }

@@ -16,10 +16,10 @@
  * free of runtime dependencies.
  */
 import { randomUUID } from 'node:crypto'
-import { TurnInsightError } from './errors.mjs'
+import { ToolInsightError } from './errors.mjs'
 
 /** Attribution recorded on the auxiliary request. */
-const PLUGIN_ID = 'dsh-plugin-turn-insight'
+const PLUGIN_ID = 'dsh-plugin-trajectory-tool-insight'
 
 function createDeadline(parent, timeoutMs) {
   const controller = new AbortController()
@@ -29,7 +29,7 @@ function createDeadline(parent, timeoutMs) {
   else parent?.addEventListener?.('abort', forward, { once: true })
   const timer = setTimeout(() => {
     timedOut = true
-    controller.abort(new Error('turn-insight: interpretation timed out'))
+    controller.abort(new Error('trajectory-tool-insight: interpretation timed out'))
   }, timeoutMs)
   return {
     signal: controller.signal,
@@ -95,14 +95,14 @@ function newAssembler() {
  * @param request.timeoutMs - wall-clock cap.
  * @param request.signal - caller cancellation, forwarded to the provider.
  * @returns `{ text, usage, finish, truncated }`.
- * @throws {TurnInsightError} for every provider or shape failure.
+ * @throws {ToolInsightError} for every provider or shape failure.
  */
 export async function runInterpretation(llm, { route, system, user, maxOutputTokens, timeoutMs, signal }) {
   if (llm === null || typeof llm !== 'object' || typeof llm.stream !== 'function') {
-    throw new TurnInsightError('LLM_UNAVAILABLE', 'The DSH llm service is unavailable in this deployment.')
+    throw new ToolInsightError('LLM_UNAVAILABLE', 'The DSH llm service is unavailable in this deployment.')
   }
   if (!route?.provider || !route?.model) {
-    throw new TurnInsightError('MODEL_NOT_CONFIGURED', 'No model route could be resolved for this session.')
+    throw new ToolInsightError('MODEL_NOT_CONFIGURED', 'No model route could be resolved for this session.')
   }
 
   const deadline = createDeadline(signal, timeoutMs)
@@ -113,7 +113,7 @@ export async function runInterpretation(llm, { route, system, user, maxOutputTok
       model: route.model,
       ...(route.reasoningEffort ? { reasoningEffort: route.reasoningEffort } : {}),
       messages: [{
-        id: `turn-insight-${randomUUID()}`,
+        id: `trajectory-tool-insight-${randomUUID()}`,
         role: 'user',
         source: { kind: 'plugin', plugin: PLUGIN_ID },
         content: [{ type: 'text', text: user }],
@@ -129,7 +129,7 @@ export async function runInterpretation(llm, { route, system, user, maxOutputTok
 
     if (deadline.signal.aborted) {
       const timedOut = deadline.timedOut && signal?.aborted !== true
-      throw new TurnInsightError(
+      throw new ToolInsightError(
         timedOut ? 'MODEL_TIMEOUT' : 'MODEL_ABORTED',
         timedOut ? 'The interpretation call timed out.' : 'The interpretation call was cancelled.',
         { usage: assembler.usage },
@@ -139,7 +139,7 @@ export async function runInterpretation(llm, { route, system, user, maxOutputTok
     const finish = assembler.reason
     const kind = typeof finish?.kind === 'string' ? finish.kind : 'stop'
     if (kind === 'error' || kind === 'aborted') {
-      throw new TurnInsightError(
+      throw new ToolInsightError(
         typeof finish?.failure?.code === 'string' && finish.failure.code ? finish.failure.code : 'MODEL_ERROR',
         finish?.failure?.message ?? 'The interpretation model call failed.',
         { usage: assembler.usage, finish: kind },
@@ -148,7 +148,7 @@ export async function runInterpretation(llm, { route, system, user, maxOutputTok
 
     const { text, toolCallCount } = assembler.read()
     if (toolCallCount > 0) {
-      throw new TurnInsightError('MODEL_TOOL_CALL', 'The interpretation model attempted a tool call.', {
+      throw new ToolInsightError('MODEL_TOOL_CALL', 'The interpretation model attempted a tool call.', {
         usage: assembler.usage,
         finish: kind,
       })
@@ -159,7 +159,7 @@ export async function runInterpretation(llm, { route, system, user, maxOutputTok
       // never emit an answer. That is a configuration problem, not an empty
       // response, so it gets its own code and an actionable message.
       if (truncated) {
-        throw new TurnInsightError(
+        throw new ToolInsightError(
           'MODEL_NO_OUTPUT',
           `模型把全部 ${maxOutputTokens} token 输出预算用在了推理上，没有产出正文。`
           + '该预算是「推理 + 正文」的合计上限，无法把推理排除在外；'
@@ -167,7 +167,7 @@ export async function runInterpretation(llm, { route, system, user, maxOutputTok
           { usage: assembler.usage, finish: kind, maxOutputTokens },
         )
       }
-      throw new TurnInsightError('MODEL_EMPTY_OUTPUT', 'The interpretation model returned no visible text.', {
+      throw new ToolInsightError('MODEL_EMPTY_OUTPUT', 'The interpretation model returned no visible text.', {
         usage: assembler.usage,
         finish: kind,
       })

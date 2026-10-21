@@ -1,12 +1,12 @@
 /**
- * 轨迹解读 · 宿主半部分.
+ * 轨迹工具调用解读 · 宿主半部分.
  *
  * A read-only interpretation surface for one trajectory turn's tool calls. It
  * contributes exactly two authenticated HTTP routes and never writes to the
  * session log:
  *
- * - `POST /api/turn-insight.turns`   `{ sessionId }` → `{ turns, totalTurns, route }`
- * - `POST /api/turn-insight.analyze` `{ sessionId, turn }` → `{ text, route, usage, finish, truncated }`
+ * - `POST /api/trajectory-tool-insight.turns`   `{ sessionId }` → `{ turns, totalTurns, route }`
+ * - `POST /api/trajectory-tool-insight.analyze` `{ sessionId, turn }` → `{ text, route, usage, finish, truncated }`
  *
  * Both are **exact Fetch routes under the shared `/api` channel** rather than a
  * private `connection.rpc.handle` channel. That is deliberate:
@@ -24,16 +24,16 @@
  * the panel shows is folded out of it on demand, and the model that interprets
  * a turn is resolved from that same session's own durable model selection.
  *
- * @module dsh-plugin-turn-insight
+ * @module dsh-plugin-trajectory-tool-insight
  */
 import { configuredFallbackRoute, normalizeConfig, turnLimits } from './src/config.mjs'
-import { TurnInsightError } from './src/errors.mjs'
+import { ToolInsightError } from './src/errors.mjs'
 import { runInterpretation } from './src/llm.mjs'
 import { buildAnalysisPrompt, buildSystemPrompt } from './src/prompt.mjs'
 import { resolveRoute } from './src/route.mjs'
 import { collectTurns } from './src/turns.mjs'
 
-export const name = 'turn-insight'
+export const name = 'trajectory-tool-insight'
 
 /**
  * The routes live on the shared `/api` channel, which the connection plugin
@@ -42,8 +42,8 @@ export const name = 'turn-insight'
 export const inject = ['connection', 'sessionQuery', 'llm']
 
 /** Exact Fetch routes, absolute below `/api`, single segment, dots allowed. */
-const TURNS_PATH = '/api/turn-insight.turns'
-const ANALYZE_PATH = '/api/turn-insight.analyze'
+const TURNS_PATH = '/api/trajectory-tool-insight.turns'
+const ANALYZE_PATH = '/api/trajectory-tool-insight.analyze'
 
 function ok(value) {
   return { ok: true, value }
@@ -75,13 +75,13 @@ async function readJson(request) {
   } catch {
     // fall through to the explicit failure below
   }
-  throw new TurnInsightError('bad-request', 'The request body must be a JSON object.')
+  throw new ToolInsightError('bad-request', 'The request body must be a JSON object.')
 }
 
 function readSessionId(payload) {
   const sessionId = payload.sessionId
   if (typeof sessionId !== 'string' || sessionId.trim().length === 0) {
-    throw new TurnInsightError('bad-request', 'payload.sessionId must be a non-empty string.')
+    throw new ToolInsightError('bad-request', 'payload.sessionId must be a non-empty string.')
   }
   return sessionId.trim()
 }
@@ -89,7 +89,7 @@ function readSessionId(payload) {
 function readTurn(payload) {
   const turn = payload.turn
   if (!Number.isSafeInteger(turn) || turn < 0) {
-    throw new TurnInsightError('bad-request', 'payload.turn must be a non-negative integer.')
+    throw new ToolInsightError('bad-request', 'payload.turn must be a non-negative integer.')
   }
   return turn
 }
@@ -103,17 +103,17 @@ function readTurn(payload) {
  * @param payload - the decoded request body.
  * @param settings - validated configuration supplying the length cap.
  * @returns the trimmed append, or `''`.
- * @throws {TurnInsightError} when the value is not a string or exceeds the cap.
+ * @throws {ToolInsightError} when the value is not a string or exceeds the cap.
  */
 function readAppend(payload, settings) {
   const value = payload.append
   if (value === undefined || value === null) return ''
   if (typeof value !== 'string') {
-    throw new TurnInsightError('bad-request', 'payload.append must be a string when present.')
+    throw new ToolInsightError('bad-request', 'payload.append must be a string when present.')
   }
   const append = value.trim()
   if (append.length > settings.maxAppendChars) {
-    throw new TurnInsightError(
+    throw new ToolInsightError(
       'bad-request',
       `payload.append must be at most ${settings.maxAppendChars} characters.`,
       { maxAppendChars: settings.maxAppendChars, received: append.length },
@@ -177,7 +177,7 @@ async function readSession(ctx, settings, sessionId, signal) {
 export function apply(ctx, rawConfig = {}) {
   const settings = normalizeConfig(rawConfig)
   if (typeof ctx.connection?.fetch?.register !== 'function') {
-    throw new TypeError('turn-insight: ctx.connection.fetch is unavailable in this deployment')
+    throw new TypeError('trajectory-tool-insight: ctx.connection.fetch is unavailable in this deployment')
   }
 
   // A business failure stays a 200 with a structured body so the panel can
@@ -187,7 +187,7 @@ export function apply(ctx, rawConfig = {}) {
     try {
       return respond(ok(await task()))
     } catch (error) {
-      if (error instanceof TurnInsightError) return respond(failure(error.code, error.message, error.details))
+      if (error instanceof ToolInsightError) return respond(failure(error.code, error.message, error.details))
       return respond(failure('internal', error instanceof Error ? error.message : String(error), {}))
     }
   }
@@ -218,7 +218,7 @@ export function apply(ctx, rawConfig = {}) {
       const { turns, route } = await readSession(ctx, settings, sessionId, request.signal)
       const target = turns.find(item => item.turn === turn)
       if (target === undefined) {
-        throw new TurnInsightError('TURN_NOT_FOUND', `Turn ${turn} has no recorded tool calls in this session.`)
+        throw new ToolInsightError('TURN_NOT_FOUND', `Turn ${turn} has no recorded tool calls in this session.`)
       }
       // The configured effort, when set, wins over the inherited session route:
       // it is the documented lever for a model that burns the whole output

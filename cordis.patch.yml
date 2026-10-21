@@ -2,5 +2,5 @@
 # bundle layers below it. The inserted row is what makes the package a Loader
 # entry; client-modules discovers the `./client` bundle from that same entry.
 - insert:
-    - id: turn-insight
-      name: dsh-plugin-turn-insight
+    - id: trajectory-tool-insight
+      name: dsh-plugin-trajectory-tool-insight

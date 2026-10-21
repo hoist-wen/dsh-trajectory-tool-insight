@@ -1,12 +1,12 @@
 /**
- * 轨迹解读 · 浏览器半部分.
+ * 轨迹工具调用解读 · 浏览器半部分.
  *
  * Registers one entry in the conversation view ring (`conversation.view`), so
  * the analysis surface renders as a sibling tab of the built-in 对话 / 轨迹
  * tabs. It claims no layout of its own: no shell overlay, no width drag, no
  * DOM injection outside its own subtree.
  *
- * Everything the panel shows comes from the host channel `/turn-insight`; this
+ * Everything the panel shows comes from the host channel `/trajectory-tool-insight`; this
  * bundle never reads the session log directly, so the raw log stays the single
  * source of truth.
  *
@@ -15,19 +15,19 @@
  * built-in Web Client packages.
  */
 window.__ModuleLoader__.load({
-  id: 'dsh-plugin-turn-insight',
+  id: 'dsh-plugin-trajectory-tool-insight',
   factory: (require) => {
     const React = require('react')
     const { createElement: h, useCallback, useEffect, useRef, useState } = React
 
-    const PLUGIN_ID = 'dsh-plugin-turn-insight'
+    const PLUGIN_ID = 'dsh-plugin-trajectory-tool-insight'
     const VIEW_SLOT = 'conversation.view'
-    const VIEW_ID = 'turn-insight'
+    const VIEW_ID = 'trajectory-tool-insight'
     const VIEW_ORDER = 20
     const VIEW_LABEL = '解读'
     // Exact routes on the shared `/api` channel, not a private RPC channel.
-    const TURNS_PATH = '/api/turn-insight.turns'
-    const ANALYZE_PATH = '/api/turn-insight.analyze'
+    const TURNS_PATH = '/api/trajectory-tool-insight.turns'
+    const ANALYZE_PATH = '/api/trajectory-tool-insight.analyze'
 
     /**
      * Transient per-session append notes. Module-level on purpose: the view is
@@ -55,7 +55,7 @@ window.__ModuleLoader__.load({
       'bad-request': '请求参数不合法，插件与宿主版本可能不一致。',
       'http-401': '浏览器会话未鉴权，请刷新页面。',
       'http-403': '请求被 Host/Origin 校验拒绝。',
-      'http-404': '宿主没有注册该路由，插件可能未加载成功 —— 请检查「设置 → 插件」里 dsh-plugin-turn-insight 的加载状态。',
+      'http-404': '宿主没有注册该路由，插件可能未加载成功 —— 请检查「设置 → 插件」里 dsh-plugin-trajectory-tool-insight 的加载状态。',
     }
 
     const STYLE_TEXT = `
@@ -197,14 +197,14 @@ window.__ModuleLoader__.load({
           signal,
         })
         if (!response.ok) {
-          const failure = new Error(`轨迹解读请求失败（HTTP ${response.status}）`)
+          const failure = new Error(`轨迹工具调用解读请求失败（HTTP ${response.status}）`)
           failure.code = `http-${response.status}`
           throw failure
         }
         const body = await response.json().catch(() => null)
         if (body?.ok === true) return body.value
         const error = body?.error ?? {}
-        const failure = new Error(error.message || '轨迹解读请求失败')
+        const failure = new Error(error.message || '轨迹工具调用解读请求失败')
         failure.code = typeof error.code === 'string' ? error.code : ''
         failure.details = error.details ?? {}
         throw failure
@@ -305,7 +305,7 @@ window.__ModuleLoader__.load({
       )
     }
 
-    function TurnInsightView(props) {
+    function ToolInsightView(props) {
       const sessionId = typeof props.sessionId === 'string' ? props.sessionId : ''
       // The injected face is rebuilt per binding, so it is held in a ref: the
       // listing effect must depend on the session alone, never on a function
@@ -377,7 +377,7 @@ window.__ModuleLoader__.load({
       return h('div', { className: 'tins-root' },
         h('header', { className: 'tins-head' },
           h('div', { className: 'tins-head-text' },
-            h('h2', { className: 'tins-title' }, '轨迹解读'),
+            h('h2', { className: 'tins-title' }, '轨迹工具调用解读'),
             h('p', { className: 'tins-sub' }, subtitle(listing)),
           ),
           h('div', { className: 'tins-head-side' },
@@ -424,19 +424,19 @@ window.__ModuleLoader__.load({
     }
 
     return {
-      name: 'turn-insight',
+      name: 'trajectory-tool-insight',
       // Only the view ring: the routes are plain same-origin `fetch` calls, so
       // no client Connection service is involved.
       inject: ['slots'],
       apply(ctx) {
-        ctx.effect(() => installStyle(), 'turn-insight: styles')
+        ctx.effect(() => installStyle(), 'trajectory-tool-insight: styles')
         ctx.slots.inject(VIEW_SLOT, () => ctx.slots.register({
           name: VIEW_SLOT,
           id: VIEW_ID,
           order: VIEW_ORDER,
           label: () => VIEW_LABEL,
           inject: sessionId => ({ api: makeApi(sessionId) }),
-        }, TurnInsightView))
+        }, ToolInsightView))
       },
     }
   },

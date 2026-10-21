@@ -3,13 +3,13 @@
   "policy": "dsh-plugin-naming/v1",
   "plugin": {
     "namespace": "quill507",
-    "name": "turn-insight",
-    "coordinate": "quill507/turn-insight",
-    "packageName": "dsh-plugin-turn-insight"
+    "name": "trajectory-tool-insight",
+    "coordinate": "quill507/trajectory-tool-insight",
+    "packageName": "dsh-plugin-trajectory-tool-insight"
   },
   "names": {
-    "pluginNames": ["turn-insight"],
-    "loaderIds": ["turn-insight"],
+    "pluginNames": ["trajectory-tool-insight"],
+    "loaderIds": ["trajectory-tool-insight"],
     "services": [],
     "tools": [],
     "commands": [],
@@ -18,8 +18,8 @@
     "events": [],
     "settingsNamespaces": [],
     "routes": [
-      { "kind": "exact", "path": "/api/turn-insight.turns" },
-      { "kind": "exact", "path": "/api/turn-insight.analyze" }
+      { "kind": "exact", "path": "/api/trajectory-tool-insight.turns" },
+      { "kind": "exact", "path": "/api/trajectory-tool-insight.analyze" }
     ]
   }
 }

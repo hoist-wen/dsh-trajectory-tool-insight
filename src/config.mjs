@@ -80,11 +80,11 @@ const STRING_KEYS = Object.freeze(['defaultProvider', 'defaultModel', 'reasoning
 function readString(key, value) {
   if (value === undefined || value === null) return undefined
   if (typeof value !== 'string') {
-    throw new TypeError(`turn-insight: config.${key} must be a string`)
+    throw new TypeError(`trajectory-tool-insight: config.${key} must be a string`)
   }
   const trimmed = value.trim()
   if (trimmed.length > 200) {
-    throw new TypeError(`turn-insight: config.${key} must be at most 200 characters`)
+    throw new TypeError(`trajectory-tool-insight: config.${key} must be at most 200 characters`)
   }
   return trimmed
 }
@@ -93,7 +93,7 @@ function readNumber(key, value) {
   if (value === undefined || value === null) return undefined
   const [min, max] = NUMBER_BOUNDS[key]
   if (!Number.isSafeInteger(value) || value < min || value > max) {
-    throw new TypeError(`turn-insight: config.${key} must be an integer between ${min} and ${max}`)
+    throw new TypeError(`trajectory-tool-insight: config.${key} must be an integer between ${min} and ${max}`)
   }
   return value
 }
@@ -106,11 +106,11 @@ function readNumber(key, value) {
  */
 export function normalizeConfig(raw = {}) {
   if (raw === null || typeof raw !== 'object' || Array.isArray(raw)) {
-    throw new TypeError('turn-insight: plugin config must be a mapping')
+    throw new TypeError('trajectory-tool-insight: plugin config must be a mapping')
   }
   const unknown = Object.keys(raw).filter(key => !Object.hasOwn(CONFIG_DEFAULTS, key))
   if (unknown.length > 0) {
-    throw new TypeError(`turn-insight: unknown config ${unknown.map(key => `"${key}"`).join(', ')}`)
+    throw new TypeError(`trajectory-tool-insight: unknown config ${unknown.map(key => `"${key}"`).join(', ')}`)
   }
   const config = { ...CONFIG_DEFAULTS }
   for (const key of STRING_KEYS) {
