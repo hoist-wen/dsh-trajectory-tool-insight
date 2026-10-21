@@ -5,7 +5,7 @@
     "namespace": "hoist-wen",
     "name": "trajectory-tool-insight",
     "coordinate": "hoist-wen/trajectory-tool-insight",
-    "packageName": "@hoist-wen/trajectory-tool-insight"
+    "packageName": "@hoist-wen/dsh-trajectory-tool-insight"
   },
   "names": {
     "pluginNames": ["trajectory-tool-insight"],

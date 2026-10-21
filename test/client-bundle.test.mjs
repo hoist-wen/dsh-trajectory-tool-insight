@@ -8,7 +8,7 @@ import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import { test } from 'node:test'
 
-const PACKAGE_NAME = '@hoist-wen/trajectory-tool-insight'
+const PACKAGE_NAME = '@hoist-wen/dsh-trajectory-tool-insight'
 const SOURCE = await readFile(new URL('../client.js', import.meta.url), 'utf8')
 
 function createReactStub(stateSeeds = []) {

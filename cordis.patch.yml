@@ -3,4 +3,4 @@
 # entry; client-modules discovers the `./client` bundle from that same entry.
 - insert:
     - id: trajectory-tool-insight
-      name: '@hoist-wen/trajectory-tool-insight'
+      name: '@hoist-wen/dsh-trajectory-tool-insight'

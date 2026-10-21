@@ -1,5 +1,5 @@
 {
-  "name": "@hoist-wen/trajectory-tool-insight",
+  "name": "@hoist-wen/dsh-trajectory-tool-insight",
   "version": "0.1.5",
   "publishConfig": {
     "access": "public"

@@ -94,7 +94,7 @@ test('the request carries the resolved route, the system prompt, and an attribut
   const [message] = options.messages
   assert.equal(message.role, 'user')
   assert.equal(message.source.kind, 'plugin')
-  assert.equal(message.source.plugin, '@hoist-wen/trajectory-tool-insight')
+  assert.equal(message.source.plugin, '@hoist-wen/dsh-trajectory-tool-insight')
   assert.match(message.id, /^trajectory-tool-insight-/u)
   assert.deepEqual(message.content, [{ type: 'text', text: CALL.user }])
 })

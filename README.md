@@ -46,7 +46,7 @@
 
 | 装法 | 命令 | profile 里记成 | 改了源码 |
 |---|---|---|---|
-| 本地 tarball（分发） | 先 `npm pack`，再 `dsh plugin --profile desktop add "…\hoist-wen-trajectory-tool-insight-0.1.5.tgz"` | `file:` 指向的 `.tgz` 快照 | 要重新 `npm pack` 并重装 |
+| 本地 tarball（分发） | 先 `npm pack`，再 `dsh plugin --profile desktop add "…\hoist-wen-dsh-trajectory-tool-insight-0.1.5.tgz"` | `file:` 指向的 `.tgz` 快照 | 要重新 `npm pack` 并重装 |
 | git 远端 | `dsh plugin --profile desktop add github:hoist-wen/dsh-trajectory-tool-insight` | 从 GitHub 取的一份拷贝 | 不生效，需重新安装 |
 
 在源码目录的父目录里也可以写相对路径（`dsh plugin --profile desktop add ./dsh-trajectory-tool-insight`），CLI 会先把它解析成绝对路径；但**插件页与 `plugin_manager` 工具里必须填绝对路径**，相对路径会被拒绝（`a local path must be absolute`）。兼容性预检对目录形式直接读该目录的 `package.json`，不联网、不下载。
@@ -56,7 +56,7 @@
 卸载（两种装法一样）：
 
 ```shell
-dsh plugin --profile desktop remove @hoist-wen/trajectory-tool-insight
+dsh plugin --profile desktop remove @hoist-wen/dsh-trajectory-tool-insight
 ```
 
 > **各自要留住什么**
@@ -114,7 +114,7 @@ dsh plugin --profile desktop remove @hoist-wen/trajectory-tool-insight
 
 ```yaml
 - id: trajectory-tool-insight
-  name: '@hoist-wen/trajectory-tool-insight'
+  name: '@hoist-wen/dsh-trajectory-tool-insight'
   config:
     defaultProvider: commandcode
     defaultModel: deepseek/deepseek-v4.1-flash
@@ -154,7 +154,7 @@ dsh plugin --profile desktop remove @hoist-wen/trajectory-tool-insight
 
 一次 `turn/analyze` 触发**一次独立的模型请求**：`system` 为固定的解读器提示词（刻意写短——过长的指令会诱发更多推理 token，而推理与正文共享同一份输出预算），要求用**一段连贯中文**（不分点、不加小标题）同时交代「这一轮在做什么 / 判断 / 下一步」，`user` 为一则 `TURN_EVIDENCE_JSON_LENGTH=<n>` 长度标记 + 该轮工具调用证据的 JSON。证据里的参数与工具输出是不可信的历史数据，系统提示词固定了「只当数据」的边界。
 
-- 请求携带 `source: { kind: 'plugin', plugin: '@hoist-wen/trajectory-tool-insight' }` 作为归因；
+- 请求携带 `source: { kind: 'plugin', plugin: '@hoist-wen/dsh-trajectory-tool-insight' }` 作为归因；
 - **不传 `sessionId`、不追加任何会话事件**，所以解读请求不进入会话日志，也不会进入对话历史或 KV 缓存前缀。
 
 ### Token 影响
@@ -206,7 +206,7 @@ npm test    # node --test，覆盖配置校验、轮次折叠、模型解析、�
 
 ## 致谢
 
-- **原命名来源**：本插件早期沿用的包名前缀与命名空间 `quill507` 取自 [@quill507/dsh-auto-approval-llm](https://github.com/cuddly-guacamole/dsh-auto-approval-llm)（MIT）。包名现已改为 `@hoist-wen/trajectory-tool-insight`，原名称在此记录。
+- **来源项目**：本插件由 [dsh-trace-insight](https://github.com/Liu-Bot24/dsh-trace-insight) 精简重写而来（MIT，Copyright © 2026 DSH Trace Insight contributors）。最初沿用的包名 `dsh-plugin-turn-insight` 与「轨迹解读」定位均源自该项目；现更名为 `@hoist-wen/dsh-trajectory-tool-insight`，原名称在此记录。
 
 ## 许可证
 

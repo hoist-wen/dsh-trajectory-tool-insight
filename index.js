@@ -24,7 +24,7 @@
  * the panel shows is folded out of it on demand, and the model that interprets
  * a turn is resolved from that same session's own durable model selection.
  *
- * @module @hoist-wen/trajectory-tool-insight
+ * @module @hoist-wen/dsh-trajectory-tool-insight
  */
 import { configuredFallbackRoute, normalizeConfig, turnLimits } from './src/config.mjs'
 import { ToolInsightError } from './src/errors.mjs'

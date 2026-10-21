@@ -15,12 +15,12 @@
  * built-in Web Client packages.
  */
 window.__ModuleLoader__.load({
-  id: '@hoist-wen/trajectory-tool-insight',
+  id: '@hoist-wen/dsh-trajectory-tool-insight',
   factory: (require) => {
     const React = require('react')
     const { createElement: h, useCallback, useEffect, useRef, useState } = React
 
-    const PLUGIN_ID = '@hoist-wen/trajectory-tool-insight'
+    const PLUGIN_ID = '@hoist-wen/dsh-trajectory-tool-insight'
     const VIEW_SLOT = 'conversation.view'
     const VIEW_ID = 'trajectory-tool-insight'
     const VIEW_ORDER = 20
@@ -55,7 +55,7 @@ window.__ModuleLoader__.load({
       'bad-request': '请求参数不合法，插件与宿主版本可能不一致。',
       'http-401': '浏览器会话未鉴权，请刷新页面。',
       'http-403': '请求被 Host/Origin 校验拒绝。',
-      'http-404': '宿主没有注册该路由，插件可能未加载成功 —— 请检查「设置 → 插件」里 @hoist-wen/trajectory-tool-insight 的加载状态。',
+      'http-404': '宿主没有注册该路由，插件可能未加载成功 —— 请检查「设置 → 插件」里 @hoist-wen/dsh-trajectory-tool-insight 的加载状态。',
     }
 
     const STYLE_TEXT = `
