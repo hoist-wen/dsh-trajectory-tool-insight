@@ -40,24 +40,24 @@
 
 ## 安装
 
-需要 Node.js 22.19.0+ 与 DSH Web。本包在 **0.2.0-rc.1** 上逐字段核对并实测（此前 0.1.7-rc.2 亦实测通过）；`package.json` 的 `engines.dsh` 声明的就是这一核对基线。该字段仅作声明，DSH 当前的安装器与加载器都不强制检查它。
+需要 Node.js 22.19.0+ 与 DSH 桌面端。本包在 **0.2.0-rc.1** 上逐字段核对并实测（此前 0.1.7-rc.2 亦实测通过）；`package.json` 的 `engines.dsh` 声明的就是这一核对基线。该字段仅作声明，DSH 当前的安装器与加载器都不强制检查它。
 
-本包**没有构建步骤**——`index.js`（宿主）与 `client.js`（浏览器 bundle）就是发布物，所以**不预先打包也能装**。三种装法的区别只在 profile 加载的是哪一份文件：
+本包**没有构建步骤**——`index.js`（宿主）与 `client.js`（浏览器 bundle）就是发布物，所以**不预先打包也能装**。三种装法都装进 `desktop` profile，区别只在 profile 加载的是哪一份文件：
 
 | 装法 | 命令 | profile 里记成 | 改了源码 |
 |---|---|---|---|
-| 源码目录（本机开发推荐） | `dsh plugin --profile web add "C:\Users\zhila\wen\code\test\dsh-trajectory-tool-insight"` | `link:` + 指向该目录的链接 | 直接生效，不必重装 |
-| 本地 tarball（分发） | 先 `npm pack`，再 `dsh plugin --profile web add "…\dsh-plugin-trajectory-tool-insight-0.1.5.tgz"` | `file:` 指向的 `.tgz` 快照 | 要重新 `npm pack` 并重装 |
-| git 远端 | `dsh plugin --profile web add github:hoist-wen/dsh-trajectory-tool-insight` | 从 GitHub 取的一份拷贝 | 不生效，需重新安装 |
+| 源码目录（本机开发推荐） | `dsh plugin --profile desktop add "C:\Users\zhila\wen\code\test\dsh-trajectory-tool-insight"` | `link:` + 指向该目录的链接 | 直接生效，不必重装 |
+| 本地 tarball（分发） | 先 `npm pack`，再 `dsh plugin --profile desktop add "…\dsh-plugin-trajectory-tool-insight-0.1.5.tgz"` | `file:` 指向的 `.tgz` 快照 | 要重新 `npm pack` 并重装 |
+| git 远端 | `dsh plugin --profile desktop add github:hoist-wen/dsh-trajectory-tool-insight` | 从 GitHub 取的一份拷贝 | 不生效，需重新安装 |
 
-在源码目录的父目录里也可以写相对路径（`dsh plugin --profile web add ./dsh-trajectory-tool-insight`），CLI 会先把它解析成绝对路径；但**Web 插件页与 `plugin_manager` 工具里必须填绝对路径**，相对路径会被拒绝（`a local path must be absolute`）。兼容性预检对目录形式直接读该目录的 `package.json`，不联网、不下载。
+在源码目录的父目录里也可以写相对路径（`dsh plugin --profile desktop add ./dsh-trajectory-tool-insight`），CLI 会先把它解析成绝对路径；但**插件页与 `plugin_manager` 工具里必须填绝对路径**，相对路径会被拒绝（`a local path must be absolute`）。兼容性预检对目录形式直接读该目录的 `package.json`，不联网、不下载。
 
-重启 `dsh web`（或等 profile 热重载后刷新页面），打开任意非空会话即可看到「解读」标签。
+重启 DSH 桌面端（或等 profile 热重载后刷新页面），打开任意非空会话即可看到「解读」标签。
 
 卸载（三种装法一样）：
 
 ```shell
-dsh plugin --profile web remove dsh-plugin-trajectory-tool-insight
+dsh plugin --profile desktop remove dsh-plugin-trajectory-tool-insight
 ```
 
 > **各自要留住什么**
@@ -195,7 +195,7 @@ npm test    # node --test，覆盖配置校验、轮次折叠、模型解析、�
 
 无构建步骤：`index.js`（宿主）与 `client.js`（浏览器 bundle）都是直接编写并随包发布的源码。
 
-开发时按上面的「[源码目录](#安装)」装一次即可——profile 加载的就是这份源码，改完不必重新打包。宿主侧改动靠 profile 热重载或重启 `dsh web` 生效；`client.js` 由 client-modules 在发布前快照、经 HMR 的 `rebuilt()` 进入启动图，**改动最稳的验证方式是重启 `dsh web` 再刷新页面**。
+开发时按上面的「[源码目录](#安装)」装一次即可——profile 加载的就是这份源码，改完不必重新打包。宿主侧改动靠 profile 热重载或重启 DSH 桌面端生效；`client.js` 由 client-modules 在发布前快照、经 HMR 的 `rebuilt()` 进入启动图，**改动最稳的验证方式是重启 DSH 桌面端再刷新页面**。
 
 | 文件 | 作用 |
 |---|---|
