@@ -70,35 +70,10 @@ jobs:
       - name: Test
         run: npm test
 
-      # TEMPORARY diagnostic: print the OIDC subject npm will present, and the
-      # raw response from the registry's token-exchange endpoint. Delete once
-      # publishing is green.
-      - name: Debug OIDC claims
-        run: |
-          node -e '
-            const url = process.env.ACTIONS_ID_TOKEN_REQUEST_URL + "&audience=npm:registry.npmjs.org";
-            const auth = "bearer " + process.env.ACTIONS_ID_TOKEN_REQUEST_TOKEN;
-            fetch(url, { headers: { Authorization: auth } })
-              .then((r) => r.json())
-              .then(async (j) => {
-                const payload = JSON.parse(Buffer.from(j.value.split(".")[1], "base64url"));
-                const keep = ["sub", "repository", "repository_owner", "workflow_ref", "ref", "event_name", "environment"];
-                console.log("claims:", JSON.stringify(Object.fromEntries(keep.map((k) => [k, payload[k] ?? null])), null, 2));
-                const pkg = encodeURIComponent("@hoist-wen/dsh-trajectory-tool-insight");
-                const res = await fetch("https://registry.npmjs.org/-/npm/v1/oidc/token/exchange/package/" + pkg, {
-                  method: "POST",
-                  headers: { Authorization: auth },
-                });
-                console.log("exchange status:", res.status);
-                console.log("exchange body:", (await res.text()).slice(0, 800));
-              })
-              .catch((e) => { console.error("debug failed:", e.message); process.exit(1); });
-          '
-
       # No NODE_AUTH_TOKEN on purpose: npm notices the OIDC environment and
       # exchanges the GitHub-issued identity for registry credentials itself.
       - name: Publish
-        run: npm publish --access public --provenance --registry=https://registry.npmjs.org --loglevel=verbose
+        run: npm publish --access public --provenance --registry=https://registry.npmjs.org
 
       - name: Summarize
         run: |

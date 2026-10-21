@@ -42,13 +42,13 @@
 
 需要 Node.js 22.19.0+ 与 DSH 桌面端。本包在 **0.2.0-rc.1** 上逐字段核对并实测（此前 0.1.7-rc.2 亦实测通过）；`package.json` 的 `engines.dsh` 声明 `>=0.2.0-rc.1`，当前 0.2.1-rc.2 满足。该字段**会被 DSH 强制检查**：安装预检不满足会直接拒装，加载时 bundle 会被跳过、对应的 Loader 行会被禁用，所以不要把下限写得高于实际验证过的版本。
 
-本包**没有构建步骤**——`index.js`（宿主）与 `client.js`（浏览器 bundle）就是发布物，不需要先打包：
+本包**没有构建步骤**——`index.js`（宿主）与 `client.js`（浏览器 bundle）就是发布物，不需要先打包。npm 上已有的 `latest` 指向最新版本（当前 `0.3.3`）：
 
 ```shell
-dsh plugin --profile desktop add github:hoist-wen/dsh-trajectory-tool-insight
+dsh plugin --profile desktop add @hoist-wen/dsh-trajectory-tool-insight
 ```
 
-装进 `desktop` profile，profile 里记成从 GitHub 取的一份拷贝；之后**改了源码不会自动生效**，需要重新安装。git 安装走的是远端快照，本包没有 `prepare` 脚本，所以不会被 pnpm 的依赖脚本审批（`allowBuilds`）拦住。
+需要固定版本时把版本号带上（例如 `@hoist-wen/dsh-trajectory-tool-insight@0.3.3`）。装进 `desktop` profile 后，profile 里记的是**具体版本**，`latest` 前进了也不会自动升级；要更新就重新 `add` 一次（或先 `remove` 再 `add`）。npm 安装取的是发布快照，本包没有 `prepare` / `postinstall` 脚本，所以不会被 pnpm 的依赖脚本审批（`allowBuilds`）拦住。
 
 重启 DSH 桌面端（或等 profile 热重载后刷新页面），打开任意非空会话即可看到「解读」标签。
 
