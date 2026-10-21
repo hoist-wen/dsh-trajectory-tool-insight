@@ -18,7 +18,7 @@
 dsh plugin --profile desktop add @hoist-wen/dsh-trajectory-tool-insight
 ```
 
-profile 里记的是**具体版本**，`latest` 前进不会自动升级，要更新就重新 `add`（或先 `remove`）。需要固定版本可写 `@0.3.3`。
+profile 里记的是**具体版本**，`latest` 前进不会自动升级，要更新就重新 `add`（或先 `remove`）。需要固定版本可写 `@0.4.0`。
 
 卸载：
 

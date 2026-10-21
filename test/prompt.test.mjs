@@ -45,27 +45,25 @@ test('dropped tool calls are surfaced to the model', () => {
   assert.equal(parsed.truncatedToolCalls, 7)
 })
 
-test('the system prompt fixes the untrusted boundary and asks for one fused paragraph', () => {
+test('the system prompt fixes the untrusted boundary and asks for one paragraph', () => {
   assert.match(SYSTEM_PROMPT, /TURN_EVIDENCE_JSON_LENGTH=/u)
   assert.match(SYSTEM_PROMPT, /不可信/u)
   assert.match(SYSTEM_PROMPT, /不调用工具/u)
-  // The three former sections are a single paragraph now: one clause asks for
-  // it, and neither a numbered list nor bold section labels remain.
-  assert.ok(SYSTEM_PROMPT.includes('一段连贯的中文'))
+  assert.ok(SYSTEM_PROMPT.includes('用一段话说明'))
   assert.ok(!SYSTEM_PROMPT.includes('**'), 'no bold section labels')
   assert.ok(!/^\s*\d\.\s/mu.test(SYSTEM_PROMPT), 'no numbered output sections')
 })
 
-test('the system prompt forbids enumerating individual tool calls', () => {
-  // The panel shows counts only, and a per-call walk-through was both unwanted
-  // and the main driver of the reasoning tokens that exhausted the budget.
-  assert.ok(SYSTEM_PROMPT.includes('不要逐条罗列工具名称与参数'))
+test('the system prompt asks for a summary of the risky tool calls', () => {
+  // The panel shows counts only; the answer is a summary of what looks risky,
+  // not a full per-call walk-through.
+  assert.ok(SYSTEM_PROMPT.includes('可能有风险的工具调用'))
   assert.ok(!SYSTEM_PROMPT.includes('工具调用逐条解读'))
 })
 
 test('the system prompt stays short enough not to invite a reasoning blowout', () => {
-  // The fused single-paragraph spec cut this from ~390 characters to well under
-  // 300; the cap keeps a future edit from growing it back.
+  // Keeping the spec to one paragraph keeps this well under 300 characters;
+  // the cap keeps a future edit from growing it back.
   assert.ok(SYSTEM_PROMPT.length < 350, `system prompt is ${SYSTEM_PROMPT.length} characters`)
   assert.ok(SYSTEM_PROMPT.includes('150 字以内'))
 })
