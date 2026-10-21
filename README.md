@@ -46,7 +46,7 @@
 
 | 装法 | 命令 | profile 里记成 | 改了源码 |
 |---|---|---|---|
-| 源码目录（本机开发推荐） | `dsh plugin --profile desktop add "C:\Users\zhila\wen\code\test\dsh-trajectory-tool-insight"` | `link:` + 指向该目录的链接 | 直接生效，不必重装 |
+| 源码目录 | `dsh plugin --profile desktop add "C:\Users\zhila\wen\code\test\dsh-trajectory-tool-insight"` | `link:` + 指向该目录的链接 | 直接生效，不必重装 |
 | 本地 tarball（分发） | 先 `npm pack`，再 `dsh plugin --profile desktop add "…\dsh-plugin-trajectory-tool-insight-0.1.5.tgz"` | `file:` 指向的 `.tgz` 快照 | 要重新 `npm pack` 并重装 |
 | git 远端 | `dsh plugin --profile desktop add github:hoist-wen/dsh-trajectory-tool-insight` | 从 GitHub 取的一份拷贝 | 不生效，需重新安装 |
 
