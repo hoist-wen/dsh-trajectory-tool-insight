@@ -1,5 +1,7 @@
 # 轨迹工具调用解读 Trajectory Tool Insight
 
+[![Awesome DSH Plugin](https://awesome-dsh-plugin.com/badge.svg)](https://awesome-dsh-plugin.com)
+
 给 DSH Web 的会话视图环加一个 **「解读」** 标签，坐在「对话」「轨迹」旁边。
 
 按轮次列出**哪些轮次有工具调用**（调用次数、失败数、被截断数、提示词摘要），每轮一个「分析」按钮，点了由模型给出一段解读。默认用**该会话正在使用的模型**，不用额外配置。
